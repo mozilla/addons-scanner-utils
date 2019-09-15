@@ -1,0 +1,13 @@
+# exclude everything by default
+*.*
+# exclude these files
+*.js
+# exclude these directories
+/bin/
+/coverage/
+/dist/
+/node_modules/
+# white-list files we want to process
+!*.ts
+!*.md
+!*.scss

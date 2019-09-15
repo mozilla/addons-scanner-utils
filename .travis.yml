@@ -1,0 +1,51 @@
+language: node_js
+_aliases:
+  - &node-prod
+    # This is the NodeJS version we run in production.
+    node_js: '10'
+  - &node-next
+    # This is the next NodeJS version we will support.
+    node_js: '12'
+
+cache:
+  yarn: true
+
+# See: https://github.com/mozilla/addons-frontend/issues/3034
+install: yarn install --pure-lockfile
+
+matrix:
+  fast_finish: true
+
+jobs:
+  include:
+    - name: unit tests (node@production)
+      <<: *node-prod
+      script: yarn test-ci
+    - name: unit tests (node@next)
+      <<: *node-next
+      script: yarn test
+      # Make sure we can build a production package.
+    - name: package module (node@production)
+      <<: *node-prod
+      script: yarn pack
+    - name: type checking (node@production)
+      <<: *node-prod
+      script: yarn typecheck
+    - name: type coverage (node@production)
+      <<: *node-prod
+      script: yarn type-coverage
+    - name: prettier (node@production)
+      <<: *node-prod
+      script: yarn prettier-ci
+    - name: linter (node@production)
+      <<: *node-prod
+      script: yarn lint
+    - stage: npm release
+      if: tag IS present
+      <<: *node-prod
+      deploy:
+        provider: npm
+        email: "$NPM_EMAIL"
+        api_key: "$NPM_TOKEN"
+        on:
+          tags: true
