@@ -1,13 +1,13 @@
 # addons-cli-utils
 
-[![Build Status](https://travis-ci.com/mozilla/addons-cli-utils.svg?branch=master)](https://travis-ci.com/mozilla/addons-cli-utils) [![codecov](https://codecov.io/gh/mozilla/addons-cli-utils/branch/master/graph/badge.svg)](https://codecov.io/gh/mozilla/addons-cli-utils)
+[![Build Status](https://travis-ci.com/mozilla/addons-cli-utils.svg?branch=master)](https://travis-ci.com/mozilla/addons-cli-utils) [![codecov](https://codecov.io/gh/mozilla/addons-cli-utils/branch/master/graph/badge.svg)](https://codecov.io/gh/mozilla/addons-cli-utils) [![npm version](https://badge.fury.io/js/addons-cli-utils.svg)](https://badge.fury.io/js/addons-cli-utils)
 
 Various addons related helpers to build CLIs.
 
 ## Usage
 
 ```
-yarn install addons-cli-utils
+yarn add addons-cli-utils
 ```
 
 ## Requirements
