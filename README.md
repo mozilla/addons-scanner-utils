@@ -1,6 +1,6 @@
 # addons-cli-utils
 
-[![Build Status](https://travis-ci.com/willdurand/addons-cli-utils.svg?branch=master)](https://travis-ci.com/willdurand/addons-cli-utils) [![codecov](https://codecov.io/gh/willdurand/addons-cli-utils/branch/master/graph/badge.svg)](https://codecov.io/gh/willdurand/addons-cli-utils)
+[![Build Status](https://travis-ci.com/mozilla/addons-cli-utils.svg?branch=master)](https://travis-ci.com/mozilla/addons-cli-utils) [![codecov](https://codecov.io/gh/mozilla/addons-cli-utils/branch/master/graph/badge.svg)](https://codecov.io/gh/mozilla/addons-cli-utils)
 
 Various addons related helpers to build CLIs.
 
