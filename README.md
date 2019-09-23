@@ -1,13 +1,13 @@
-# addons-cli-utils
+# addons-scanner-utils
 
-[![Build Status](https://travis-ci.com/mozilla/addons-cli-utils.svg?branch=master)](https://travis-ci.com/mozilla/addons-cli-utils) [![codecov](https://codecov.io/gh/mozilla/addons-cli-utils/branch/master/graph/badge.svg)](https://codecov.io/gh/mozilla/addons-cli-utils) [![npm version](https://badge.fury.io/js/addons-cli-utils.svg)](https://badge.fury.io/js/addons-cli-utils)
+[![Build Status](https://travis-ci.com/mozilla/addons-scanner-utils.svg?branch=master)](https://travis-ci.com/mozilla/addons-scanner-utils) [![codecov](https://codecov.io/gh/mozilla/addons-scanner-utils/branch/master/graph/badge.svg)](https://codecov.io/gh/mozilla/addons-scanner-utils) [![npm version](https://badge.fury.io/js/addons-scanner-utils.svg)](https://badge.fury.io/js/addons-scanner-utils)
 
 Various addons related helpers to build CLIs.
 
 ## Usage
 
 ```
-yarn add addons-cli-utils
+yarn add addons-scanner-utils
 ```
 
 ## Requirements

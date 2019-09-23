@@ -1,5 +1,5 @@
 {
-  "name": "addons-cli-utils",
+  "name": "addons-scanner-utils",
   "version": "1.0.1",
   "description": "Various addons related helpers to build CLIs.",
   "main": "dist/index.js",
