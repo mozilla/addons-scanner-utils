@@ -1,6 +1,6 @@
 # Contributing
 
-This is the code for the Mozilla **addons-cli-utils** project, part of the Mozilla add-ons reviewers' toolbox.
+This is the code for the Mozilla **addons-scanner-utils** project, part of the Mozilla add-ons reviewers' toolbox.
 
 Before contributing, please note:
 
@@ -21,4 +21,4 @@ If you come across a potential `good first bug` for contributors, please tag it 
 
 [these steps]: https://wiki.mozilla.org/Add-ons/Contribute/Code
 [triages]: https://wiki.mozilla.org/Add-ons/Contribute/Goodfirstbugs_triage
-[prettier]: https://github.com/mozilla/addons-cli-utils/blob/master/README.md#Prettier
+[prettier]: https://github.com/mozilla/addons-scanner-utils/blob/master/README.md#Prettier
