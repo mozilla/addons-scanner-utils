@@ -45,7 +45,7 @@ export type FunctionConfig = {
   _download?: typeof download;
   _process?: typeof process;
   _unlinkFile?: typeof fs.promises.unlink;
-  apiKeyEnvVarName: string;
+  apiKeyEnvVarName?: string;
   requiredApiKeyParam?: string;
   requiredDownloadUrlParam?: string;
   tmpDir?: string;
