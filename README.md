@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/mozilla/addons-scanner-utils.svg?branch=master)](https://travis-ci.com/mozilla/addons-scanner-utils) [![codecov](https://codecov.io/gh/mozilla/addons-scanner-utils/branch/master/graph/badge.svg)](https://codecov.io/gh/mozilla/addons-scanner-utils) [![npm version](https://badge.fury.io/js/addons-scanner-utils.svg)](https://badge.fury.io/js/addons-scanner-utils)
 
-Various addons related helpers to build CLIs.
+Various addons related helpers to build scanners.
 
 ## Usage
 
