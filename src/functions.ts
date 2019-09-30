@@ -57,7 +57,7 @@ export const createExpressApp = ({
   _download = download,
   _process = process,
   _unlinkFile = fs.promises.unlink,
-  apiKeyEnvVarName,
+  apiKeyEnvVarName = 'LAMBDA_API_KEY',
   requiredApiKeyParam = 'api_key',
   requiredDownloadUrlParam = 'download_url',
   tmpDir = os.tmpdir(),
