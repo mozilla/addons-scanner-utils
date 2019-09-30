@@ -62,7 +62,7 @@ export const createExpressApp = ({
   requiredDownloadUrlParam = 'download_url',
   tmpDir = os.tmpdir(),
   xpiFilename = 'input.xpi',
-}: FunctionConfig) => (handler: RequestHandler) => {
+}: FunctionConfig = {}) => (handler: RequestHandler) => {
   const app = express();
 
   const allowedOrigin = _process.env.ALLOWED_ORIGIN || null;
