@@ -95,10 +95,11 @@ describe(__filename, () => {
 
   const createXpi = ({
     filepath = 'foo/bar',
-    zipLib = fakeZipLib,
+    keepAlive = false,
     stderr = createFakeStderr(),
+    zipLib = fakeZipLib,
   } = {}) => {
-    return new Xpi({ filepath, stderr, zipLib });
+    return new Xpi({ filepath, keepAlive, stderr, zipLib });
   };
 
   describe('open()', () => {
@@ -122,12 +123,12 @@ describe(__filename, () => {
       await expect(myXpi.open()).rejects.toThrow('open() test');
     });
 
-    it('reuses the zipfile if it is still open', async () => {
+    it('reuses the zipfile if it is still open and keepAlive is true', async () => {
       const openZipFile = {
         ...fakeZipFile,
         isOpen: true,
       } as ZipFile;
-      const myXpi = createXpi();
+      const myXpi = createXpi({ keepAlive: true });
       // Return the fake zip to the open callback.
       openStub.yieldsAsync(null, openZipFile);
 
@@ -136,10 +137,31 @@ describe(__filename, () => {
       expect(openStub.called).toEqual(true);
       expect(zip).toEqual(openZipFile);
 
-      openStub.reset();
+      openStub.resetHistory();
       zip = await myXpi.open();
 
       expect(openStub.called).toEqual(false);
+      expect(zip).toEqual(openZipFile);
+    });
+
+    it('does not reuse the zipfile if it is still open but keepAlive is false', async () => {
+      const openZipFile = {
+        ...fakeZipFile,
+        isOpen: true,
+      } as ZipFile;
+      const myXpi = createXpi({ keepAlive: false });
+      // Return the fake zip to the open callback.
+      openStub.yieldsAsync(null, openZipFile);
+
+      let zip = await myXpi.open();
+
+      expect(openStub.called).toEqual(true);
+      expect(zip).toEqual(openZipFile);
+
+      openStub.resetHistory();
+      zip = await myXpi.open();
+
+      expect(openStub.called).toEqual(true);
       expect(zip).toEqual(openZipFile);
     });
   });

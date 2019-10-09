@@ -11,35 +11,46 @@ type Files = { [filename: string]: Entry };
 
 type XpiConstructorParams = IOBaseConstructorParams & {
   zipLib?: typeof yauzl;
+  keepAlive?: boolean;
 };
 
 /*
  * Simple Promise wrapper for the Yauzl unzipping lib to unpack add-on .xpis.
+ *
  * Note: We're using the autoclose feature of yauzl as a result every operation
- * will open the zip, do something and then close it implicitly.
- * This makes the API easy to use and the consumer doesn't need to remember to
- * close the zipfile.
+ * will open the zip, do something and then close it implicitly. This makes the
+ * API easy to use and the consumer doesn't need to remember to close the
+ * zipfile.
  */
 export class Xpi extends IOBase {
+  files: Files;
+
+  keepAlive: boolean;
+
   zipLib: typeof yauzl;
 
   zipfile: ZipFile | undefined;
 
-  files: Files;
-
-  constructor({ filepath, stderr, zipLib = yauzl }: XpiConstructorParams) {
+  constructor({
+    filepath,
+    stderr,
+    zipLib = yauzl,
+    keepAlive = false,
+  }: XpiConstructorParams) {
     super({ filepath, stderr });
 
     this.files = {};
+    this.keepAlive = keepAlive;
     this.zipLib = zipLib;
   }
 
   open(): Promise<ZipFile> {
     return new Promise((resolve, reject) => {
       // We rely on the `autoClose` feature of `yauzl`, but we cannot control
-      // when precisely the `zipfile` is closed. If the `zipfile` is still
-      // opened, let's reuse it to avoid the creation of a new file descriptor.
-      if (this.zipfile && this.zipfile.isOpen) {
+      // when precisely the `zipfile` is closed. If the `zipfile` is still open
+      // and keepAlive is enabled, let's reuse it to avoid the creation of a
+      // new file descriptor.
+      if (this.keepAlive && this.zipfile && this.zipfile.isOpen) {
         resolve(this.zipfile);
         return;
       }
