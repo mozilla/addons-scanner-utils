@@ -45,6 +45,33 @@ export const createConsoleStderr = ({
   return stderr;
 };
 
+export type InMemoryStderr = Stderr & {
+  messages: {
+    debug: string[];
+    error: string[];
+    info: string[];
+  };
+};
+
+export const createInMemoryStderr = (): InMemoryStderr => {
+  return {
+    messages: {
+      debug: [],
+      error: [],
+      info: [],
+    },
+    debug(message: string) {
+      this.messages.debug.push(message);
+    },
+    error(message: string) {
+      this.messages.error.push(message);
+    },
+    info(message: string) {
+      this.messages.info.push(message);
+    },
+  };
+};
+
 export type Stdout = {
   write: (message: string) => void;
 };
@@ -55,6 +82,17 @@ export const createConsoleStdout = ({ _console = console } = {}): Stdout => {
   return {
     write(message: string) {
       _console.log(message);
+    },
+  };
+};
+
+export type InMemoryStdout = Stdout & { output: string };
+
+export const createInMemoryStdout = (): InMemoryStdout => {
+  return {
+    output: '',
+    write(message: string) {
+      this.output = message;
     },
   };
 };

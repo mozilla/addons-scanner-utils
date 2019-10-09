@@ -1,4 +1,9 @@
-import { createConsoleStderr, createConsoleStdout } from './stdio';
+import {
+  createConsoleStderr,
+  createConsoleStdout,
+  createInMemoryStderr,
+  createInMemoryStdout,
+} from './stdio';
 
 describe(__filename, () => {
   const createFakeConsole = () => {
@@ -129,6 +134,63 @@ describe(__filename, () => {
       stdout.write(message);
 
       expect(_console.log).toHaveBeenCalledWith(message);
+    });
+  });
+
+  describe('createInMemoryStdout', () => {
+    it('writes a message to stdout.output', () => {
+      const stdout = createInMemoryStdout();
+      const message = 'hello';
+
+      stdout.write(message);
+
+      expect(stdout.output).toEqual(message);
+    });
+
+    it('only writes a single message to stdout.output', () => {
+      const stdout = createInMemoryStdout();
+      const message = 'hello';
+
+      stdout.write(message);
+      stdout.write(message);
+      stdout.write(message);
+
+      expect(stdout.output).toEqual(message);
+    });
+  });
+
+  describe('createInMemoryStderr', () => {
+    it('stores the debug logs', () => {
+      const stderr = createInMemoryStderr();
+      const message1 = 'debug 1';
+      const message2 = 'debug 2';
+
+      stderr.debug(message1);
+      stderr.debug(message2);
+
+      expect(stderr.messages.debug).toEqual([message1, message2]);
+    });
+
+    it('stores the error logs', () => {
+      const stderr = createInMemoryStderr();
+      const message1 = 'error 1';
+      const message2 = 'error 2';
+
+      stderr.error(message1);
+      stderr.error(message2);
+
+      expect(stderr.messages.error).toEqual([message1, message2]);
+    });
+
+    it('stores the info logs', () => {
+      const stderr = createInMemoryStderr();
+      const message1 = 'info 1';
+      const message2 = 'info 2';
+
+      stderr.info(message1);
+      stderr.info(message2);
+
+      expect(stderr.messages.info).toEqual([message1, message2]);
     });
   });
 });
