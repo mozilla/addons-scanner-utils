@@ -121,6 +121,27 @@ describe(__filename, () => {
 
       await expect(myXpi.open()).rejects.toThrow('open() test');
     });
+
+    it('reuses the zipfile if it is still open', async () => {
+      const openZipFile = {
+        ...fakeZipFile,
+        isOpen: true,
+      } as ZipFile;
+      const myXpi = createXpi();
+      // Return the fake zip to the open callback.
+      openStub.yieldsAsync(null, openZipFile);
+
+      let zip = await myXpi.open();
+
+      expect(openStub.called).toEqual(true);
+      expect(zip).toEqual(openZipFile);
+
+      openStub.reset();
+      zip = await myXpi.open();
+
+      expect(openStub.called).toEqual(false);
+      expect(zip).toEqual(openZipFile);
+    });
   });
 
   describe('getFiles()', () => {
