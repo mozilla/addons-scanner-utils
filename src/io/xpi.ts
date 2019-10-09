@@ -23,21 +23,34 @@ type XpiConstructorParams = IOBaseConstructorParams & {
 export class Xpi extends IOBase {
   zipLib: typeof yauzl;
 
+  zipfile: ZipFile | undefined;
+
   files: Files;
 
   constructor({ filepath, stderr, zipLib = yauzl }: XpiConstructorParams) {
     super({ filepath, stderr });
 
-    this.zipLib = zipLib;
     this.files = {};
+    this.zipLib = zipLib;
   }
 
   open(): Promise<ZipFile> {
     return new Promise((resolve, reject) => {
+      // We rely on the `autoClose` feature of `yauzl`, but we cannot control
+      // when precisely the `zipfile` is closed. If the `zipfile` is still
+      // opened, let's reuse it to avoid the creation of a new file descriptor.
+      if (this.zipfile && this.zipfile.isOpen) {
+        resolve(this.zipfile);
+        return;
+      }
+
       this.zipLib.open(this.path, (err, zipfile) => {
         if (err) {
           return reject(err);
         }
+
+        this.zipfile = zipfile;
+
         return resolve(zipfile);
       });
     });
