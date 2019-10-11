@@ -111,4 +111,8 @@ export class IOBase {
   async getChunkAsBuffer(path: string, chunkLength: number): Promise<Buffer> {
     throw new Error('getChunkAsBuffer is not implemented');
   }
+
+  close() {
+    // noop
+  }
 }
