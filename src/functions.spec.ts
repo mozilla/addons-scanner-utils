@@ -47,7 +47,6 @@ describe(__filename, () => {
       'https://dont-use-this-subdomain.addons.mozilla.org';
 
     const createProcessWithEnv = (env = {}) => {
-      // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
       return { ...process, env } as typeof process;
     };
 
