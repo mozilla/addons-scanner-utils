@@ -400,9 +400,9 @@ describe(__filename, () => {
         new Error('getChunkAsBuffer openReadStream test'),
       );
 
-      const chunkLength = 123;
+      const chunkSize = 123;
       await expect(
-        myXpi.getChunkAsBuffer('manifest.json', chunkLength),
+        myXpi.getChunkAsBuffer('manifest.json', chunkSize),
       ).rejects.toThrow('getChunkAsBuffer openReadStream test');
     });
 

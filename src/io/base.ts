@@ -108,7 +108,7 @@ export class IOBase {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async getChunkAsBuffer(path: string, chunkLength: number): Promise<Buffer> {
+  async getChunkAsBuffer(path: string, chunkSize: number): Promise<Buffer> {
     throw new Error('getChunkAsBuffer is not implemented');
   }
 }
