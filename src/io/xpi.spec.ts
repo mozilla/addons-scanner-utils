@@ -1,4 +1,3 @@
-/* eslint @typescript-eslint/no-object-literal-type-assertion: 1 */
 import fs from 'fs';
 import { Readable } from 'stream';
 import { EventEmitter } from 'events';
@@ -77,12 +76,14 @@ describe(__filename, () => {
     openReadStreamStub = sinon.stub();
     openStub = sinon.stub();
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
     // @ts-ignore
     fakeZipFile = {
       openReadStream: openReadStreamStub,
       testprop: 'I am the fake zip',
     } as ZipFile;
 
+    // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
     // @ts-ignore
     fakeZipLib = {
       open: openStub,
@@ -110,6 +111,7 @@ describe(__filename, () => {
       const zipfile = await myXpi.open();
       // TS error says that `testprop` does not exist but it is part of our
       // fake implementation.
+      // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
       // @ts-ignore
       expect(zipfile.testprop).toEqual('I am the fake zip');
     });
@@ -133,6 +135,7 @@ describe(__filename, () => {
       entryStub = onStub.withArgs('entry');
       closeStub = onStub.withArgs('close');
 
+      // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
       // @ts-ignore
       fakeZipFile = {
         on: onStub,
@@ -271,6 +274,7 @@ describe(__filename, () => {
 
       expect(() => {
         // We test the guard that prevents an invalid second argument value.
+        // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
         // @ts-ignore
         myXpi.getFile('whatever-file', 'whatever');
       }).toThrow('Unexpected fileStreamType value "whatever"');
@@ -310,7 +314,6 @@ describe(__filename, () => {
 
     it('should reject if file is too big', async () => {
       const myXpi = createXpi();
-      // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
       const fakeFileMeta = {
         uncompressedSize: 1024 * 1024 * 102,
       } as Entry;
@@ -327,7 +330,6 @@ describe(__filename, () => {
 
     it('should reject if file is too big for getFileAsString too', async () => {
       const myXpi = createXpi();
-      // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
       const fakeFileMeta = {
         uncompressedSize: 1024 * 1024 * 102,
       } as Entry;
