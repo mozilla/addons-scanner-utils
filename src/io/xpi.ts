@@ -10,8 +10,8 @@ import { IOBaseConstructorParams, IOBase } from './base';
 type Files = { [filename: string]: Entry };
 
 type XpiConstructorParams = IOBaseConstructorParams & {
+  autoClose?: boolean;
   zipLib?: typeof yauzl;
-  keepAlive?: boolean;
 };
 
 /*
@@ -20,50 +20,54 @@ type XpiConstructorParams = IOBaseConstructorParams & {
  * Note: We're using the autoclose feature of yauzl as a result every operation
  * will open the zip, do something and then close it implicitly. This makes the
  * API easy to use and the consumer doesn't need to remember to close the
- * zipfile.
+ * zipfile. That being said, we sometimes need to control the autoclose
+ * feature, so we can disable it if needed.
  */
 export class Xpi extends IOBase {
-  files: Files;
+  autoClose: boolean;
 
-  keepAlive: boolean;
+  files: Files;
 
   zipLib: typeof yauzl;
 
   zipfile: ZipFile | undefined;
 
   constructor({
+    autoClose = true,
     filepath,
     stderr,
     zipLib = yauzl,
-    keepAlive = false,
   }: XpiConstructorParams) {
     super({ filepath, stderr });
 
     this.files = {};
-    this.keepAlive = keepAlive;
+    this.autoClose = autoClose;
     this.zipLib = zipLib;
   }
 
   open(): Promise<ZipFile> {
     return new Promise((resolve, reject) => {
-      // We rely on the `autoClose` feature of `yauzl`, but we cannot control
-      // when precisely the `zipfile` is closed. If the `zipfile` is still open
-      // and keepAlive is enabled, let's reuse it to avoid the creation of a
-      // new file descriptor.
-      if (this.keepAlive && this.zipfile && this.zipfile.isOpen) {
+      // When we disable the autoclose feature, we can reuse the same file
+      // descriptor instead of creating new ones, but only if we have opened
+      // the file once and the descriptor is still open.
+      if (!this.autoClose && this.zipfile && this.zipfile.isOpen) {
         resolve(this.zipfile);
         return;
       }
 
-      this.zipLib.open(this.path, (err, zipfile) => {
-        if (err) {
-          return reject(err);
-        }
+      this.zipLib.open(
+        this.path,
+        { autoClose: this.autoClose },
+        (err, zipfile) => {
+          if (err) {
+            return reject(err);
+          }
 
-        this.zipfile = zipfile;
+          this.zipfile = zipfile;
 
-        return resolve(zipfile);
-      });
+          return resolve(zipfile);
+        },
+      );
     });
   }
 
@@ -90,8 +94,8 @@ export class Xpi extends IOBase {
   }
 
   async getFiles(_onEventsSubscribed?: () => void): Promise<Files> {
-    // If we have already processed the file and have data
-    // on this instance return that.
+    // If we have already processed the file and have data on this instance
+    // return that.
     if (Object.keys(this.files).length) {
       const wantedFiles: Files = {};
       Object.keys(this.files).forEach((fileName) => {
@@ -111,12 +115,15 @@ export class Xpi extends IOBase {
         this.handleEntry(entry, reject);
       });
 
-      // When the last entry has been processed
-      // and the fd is closed resolve the promise.
-      // Note: we cannot use 'end' here as 'end' is fired
-      // after the last entry event is emitted and streams
-      // may still be being read with openReadStream.
-      zipfile.on('close', () => {
+      // When the last entry has been processed, resolve the promise.
+      //
+      // Note: we were using 'close' before because of a potential race
+      // condition but we are not able to reproduce it and the `yauzl` code has
+      // changed a bit. We are using 'end' again now so that this function
+      // continues to work with `autoClose: false`.
+      //
+      // See: https://github.com/mozilla/addons-linter/pull/43
+      zipfile.on('end', () => {
         resolve(this.files);
       });
 
@@ -198,5 +205,17 @@ export class Xpi extends IOBase {
         );
       });
     });
+  }
+
+  close() {
+    if (this.autoClose) {
+      return;
+    }
+
+    if (this.zipfile) {
+      // According to the yauzl docs, it is safe to call `close()` multiple
+      // times so we don't check `isOpen` here.
+      this.zipfile.close();
+    }
   }
 }

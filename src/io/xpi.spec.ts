@@ -2,7 +2,7 @@ import fs from 'fs';
 import { Readable } from 'stream';
 import { EventEmitter } from 'events';
 
-import yauzl, { Entry, ZipFile } from 'yauzl';
+import yauzl, { Entry, ZipFile, RandomAccessReader } from 'yauzl';
 import realSinon, { SinonSandbox, SinonStub } from 'sinon';
 
 import { Xpi } from './xpi';
@@ -10,6 +10,36 @@ import { DEFLATE_COMPRESSION, NO_COMPRESSION } from './const';
 import { createFakeStderr, readStringFromStream } from '../test-helpers';
 
 describe(__filename, () => {
+  class FakeRandomAccessReader extends RandomAccessReader {}
+
+  const createFakeZipFile = ({
+    autoClose = true,
+    centralDirectoryOffset = 0,
+    comment = '',
+    decodeStrings = true,
+    // This is set to `1` to avoid an error with `RandomAccessReader.unref()`
+    // because we are using a `FakeRandomAccessReader`
+    entryCount = 1,
+    fileSize = 0,
+    // This is set to `true` to avoid an error due to the ZipFile trying to
+    // automatically load the entries (because `entryCount = 1` above).
+    lazyEntries = true,
+    reader = new FakeRandomAccessReader(),
+    validateEntrySizes = true,
+  } = {}): ZipFile => {
+    return new ZipFile(
+      reader,
+      centralDirectoryOffset,
+      fileSize,
+      entryCount,
+      comment,
+      autoClose,
+      lazyEntries,
+      decodeStrings,
+      validateEntrySizes,
+    );
+  };
+
   const defaultData = {
     compressionMethod: DEFLATE_COMPRESSION,
   };
@@ -76,18 +106,13 @@ describe(__filename, () => {
     openReadStreamStub = sinon.stub();
     openStub = sinon.stub();
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-    // @ts-ignore
-    fakeZipFile = {
-      openReadStream: openReadStreamStub,
-      testprop: 'I am the fake zip',
-    } as ZipFile;
+    fakeZipFile = createFakeZipFile();
+    fakeZipFile.openReadStream = openReadStreamStub;
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-    // @ts-ignore
     fakeZipLib = {
+      ...yauzl,
       open: openStub,
-    } as typeof yauzl;
+    };
   });
 
   afterEach(() => {
@@ -95,12 +120,12 @@ describe(__filename, () => {
   });
 
   const createXpi = ({
+    autoClose = true,
     filepath = 'foo/bar',
-    keepAlive = false,
     stderr = createFakeStderr(),
     zipLib = fakeZipLib,
   } = {}) => {
-    return new Xpi({ filepath, keepAlive, stderr, zipLib });
+    return new Xpi({ filepath, autoClose, stderr, zipLib });
   };
 
   describe('open()', () => {
@@ -110,11 +135,7 @@ describe(__filename, () => {
       openStub.yieldsAsync(null, fakeZipFile);
 
       const zipfile = await myXpi.open();
-      // TS error says that `testprop` does not exist but it is part of our
-      // fake implementation.
-      // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-      // @ts-ignore
-      expect(zipfile.testprop).toEqual('I am the fake zip');
+      expect(zipfile).toEqual(fakeZipFile);
     });
 
     it('should reject on error', async () => {
@@ -125,12 +146,10 @@ describe(__filename, () => {
       await expect(myXpi.open()).rejects.toThrow('open() test');
     });
 
-    it('reuses the zipfile if it is still open and keepAlive is true', async () => {
-      const openZipFile = {
-        ...fakeZipFile,
-        isOpen: true,
-      } as ZipFile;
-      const myXpi = createXpi({ keepAlive: true });
+    it('reuses the zipfile if it is still open and autoClose is disabled', async () => {
+      const openZipFile = createFakeZipFile();
+      openZipFile.isOpen = true;
+      const myXpi = createXpi({ autoClose: false });
       // Return the fake zip to the open callback.
       openStub.yieldsAsync(null, openZipFile);
 
@@ -146,12 +165,29 @@ describe(__filename, () => {
       expect(zip).toEqual(openZipFile);
     });
 
-    it('does not reuse the zipfile if it is still open but keepAlive is false', async () => {
-      const openZipFile = {
-        ...fakeZipFile,
-        isOpen: true,
-      } as ZipFile;
-      const myXpi = createXpi({ keepAlive: false });
+    it('does not reuse the zipfile if autoClose is disabled and the file is closed', async () => {
+      const closedZipFile = createFakeZipFile();
+      closedZipFile.isOpen = false;
+      const myXpi = createXpi({ autoClose: false });
+      // Return the fake zip to the open callback.
+      openStub.yieldsAsync(null, closedZipFile);
+
+      let zip = await myXpi.open();
+
+      expect(openStub.called).toEqual(true);
+      expect(zip).toEqual(closedZipFile);
+
+      openStub.resetHistory();
+      zip = await myXpi.open();
+
+      expect(openStub.called).toEqual(true);
+      expect(zip).toEqual(closedZipFile);
+    });
+
+    it('does not reuse the zipfile if it is still open but autoClose is enabled', async () => {
+      const openZipFile = createFakeZipFile();
+      openZipFile.isOpen = true;
+      const myXpi = createXpi({ autoClose: true });
       // Return the fake zip to the open callback.
       openStub.yieldsAsync(null, openZipFile);
 
@@ -169,20 +205,19 @@ describe(__filename, () => {
   });
 
   describe('getFiles()', () => {
-    let entryStub: SinonStub;
     let closeStub: SinonStub;
+    let endStub: SinonStub;
+    let entryStub: SinonStub;
 
     beforeEach(() => {
       const onStub = sinon.stub();
       // Can only yield data to the callback once.
-      entryStub = onStub.withArgs('entry');
       closeStub = onStub.withArgs('close');
+      endStub = onStub.withArgs('end');
+      entryStub = onStub.withArgs('entry');
 
-      // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-      // @ts-ignore
-      fakeZipFile = {
-        on: onStub,
-      } as ZipFile;
+      fakeZipFile = createFakeZipFile();
+      fakeZipFile.on = onStub;
     });
 
     it('should init class props as expected', () => {
@@ -228,8 +263,8 @@ describe(__filename, () => {
         entryCallback.call(null, installFileEntry);
       };
 
-      // Call the close event callback
-      closeStub.yieldsAsync();
+      // Call the end event callback
+      endStub.yieldsAsync();
 
       await expect(myXpi.getFiles(onEventsSubscribed)).resolves.toEqual(
         expected,
@@ -252,8 +287,8 @@ describe(__filename, () => {
         entryCallback.call(null, installFileEntry);
       };
 
-      // Call the close event callback
-      closeStub.yieldsAsync();
+      // Call the end event callback
+      endStub.yieldsAsync();
 
       myXpi.setScanFileCallback((filePath) => {
         return !/manifest\.json/.test(filePath);
@@ -308,6 +343,27 @@ describe(__filename, () => {
       openStub.yieldsAsync(new Error('open test'), fakeZipFile);
 
       await expect(myXpi.getFiles()).rejects.toThrow('open test');
+    });
+
+    it('throws an exception when a duplicate entry has been found', async () => {
+      const xpi = new Xpi({
+        stderr: createFakeStderr(),
+        filepath: 'src/tests/fixtures/io/archive-with-duplicate-files.zip',
+      });
+
+      await expect(xpi.getFiles()).rejects.toThrow('DuplicateZipEntry');
+    });
+
+    it('throws an exception when a duplicate entry has been found, even when autoClose is disabled', async () => {
+      const xpi = new Xpi({
+        autoClose: false,
+        filepath: 'src/tests/fixtures/io/archive-with-duplicate-files.zip',
+        stderr: createFakeStderr(),
+      });
+
+      await expect(xpi.getFiles()).rejects.toThrow('DuplicateZipEntry');
+
+      xpi.close();
     });
   });
 
@@ -618,6 +674,42 @@ describe(__filename, () => {
       await expect(myXpi.getFilesByExt('css')).rejects.toThrow(
         'File extension must start with',
       );
+    });
+  });
+
+  describe('close()', () => {
+    it('closes the zipfile when autoClose is disabled', async () => {
+      const xpi = new Xpi({
+        autoClose: false,
+        filepath: 'src/tests/fixtures/io/simple-archive.zip',
+        stderr: createFakeStderr(),
+      });
+
+      expect(xpi.zipfile).not.toBeDefined();
+
+      // This is used to trigger a call to `open()` using the public API.
+      await xpi.getFiles();
+
+      // `zipfile` is created when `getFiles()` is called.
+      expect(xpi.zipfile).toBeDefined();
+      expect(xpi.zipfile && xpi.zipfile.isOpen).toEqual(true);
+
+      xpi.close();
+
+      expect(xpi.zipfile && xpi.zipfile.isOpen).toEqual(false);
+    });
+
+    it('does nothing when autoClose is enabled', () => {
+      const xpi = new Xpi({
+        autoClose: true,
+        filepath: '',
+        stderr: createFakeStderr(),
+      });
+
+      xpi.zipfile = createFakeZipFile();
+      xpi.zipfile.close = jest.fn();
+
+      expect(xpi.zipfile.close).not.toHaveBeenCalled();
     });
   });
 });
