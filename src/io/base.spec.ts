@@ -25,54 +25,34 @@ describe(__filename, () => {
     it('should reject calling getFiles()', async () => {
       const io = createIOBase();
 
-      expect.assertions(2);
-
-      try {
-        await io.getFiles();
-      } catch (err) {
-        expect(err).toBeInstanceOf(Error);
-        expect(err.message).toEqual('getFiles is not implemented');
-      }
+      await expect(io.getFiles()).rejects.toThrow(
+        'getFiles is not implemented',
+      );
     });
 
     it('should reject calling getFileAsString()', async () => {
       const io = createIOBase();
 
-      expect.assertions(2);
-
-      try {
-        await io.getFileAsString('file');
-      } catch (err) {
-        expect(err).toBeInstanceOf(Error);
-        expect(err.message).toEqual('getFileAsString is not implemented');
-      }
+      await expect(io.getFileAsString('file')).rejects.toThrow(
+        'getFileAsString is not implemented',
+      );
     });
 
     it('should reject calling getFileAsStream()', async () => {
       const io = createIOBase();
 
-      expect.assertions(2);
-
-      try {
-        await io.getFileAsStream('file');
-      } catch (err) {
-        expect(err).toBeInstanceOf(Error);
-        expect(err.message).toEqual('getFileAsStream is not implemented');
-      }
+      await expect(io.getFileAsStream('file')).rejects.toThrow(
+        'getFileAsStream is not implemented',
+      );
     });
 
     it('should reject calling getChunkAsBuffer()', async () => {
       const io = createIOBase();
+      const length = 123;
 
-      expect.assertions(2);
-
-      try {
-        const length = 123;
-        await io.getChunkAsBuffer('file', length);
-      } catch (err) {
-        expect(err).toBeInstanceOf(Error);
-        expect(err.message).toEqual('getChunkAsBuffer is not implemented');
-      }
+      await expect(io.getChunkAsBuffer('file', length)).rejects.toThrow(
+        'getChunkAsBuffer is not implemented',
+      );
     });
 
     it('should call getFileAsStream method via getFile()', () => {

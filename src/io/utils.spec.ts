@@ -73,14 +73,9 @@ describe(__filename, () => {
       );
       const nonExistentFile = 'non-existent.js';
 
-      expect.assertions(2);
-
-      try {
-        await checkFileExists(nonExistentFile, { _lstat });
-      } catch (e) {
-        expect(e).toBeInstanceOf(Error);
-        expect(e.message).toMatch(/is not a file or directory/);
-      }
+      await expect(
+        checkFileExists(nonExistentFile, { _lstat }),
+      ).rejects.toThrow(/is not a file or directory/);
     });
 
     it('throws an error if lstat() throws an ENOENT error', async () => {
@@ -88,14 +83,9 @@ describe(__filename, () => {
       error.code = 'ENOENT';
       const _lstat = jest.fn().mockReturnValue(Promise.reject(error));
 
-      expect.assertions(2);
-
-      try {
-        await checkFileExists('some-file.js', { _lstat });
-      } catch (e) {
-        expect(e).toBeInstanceOf(Error);
-        expect(e.message).toMatch(/is not a file or directory/);
-      }
+      await expect(checkFileExists('some-file.js', { _lstat })).rejects.toThrow(
+        /is not a file or directory/,
+      );
     });
 
     it('re-throws the lstat() error if it throws an error with a code different than ENOENT', async () => {
@@ -103,13 +93,9 @@ describe(__filename, () => {
       error.code = 'OTHER_CODE';
       const _lstat = jest.fn().mockReturnValue(Promise.reject(error));
 
-      expect.assertions(1);
-
-      try {
-        await checkFileExists('some-file.js', { _lstat });
-      } catch (e) {
-        expect(e).toEqual(error);
-      }
+      await expect(checkFileExists('some-file.js', { _lstat })).rejects.toThrow(
+        error,
+      );
     });
 
     it('does not throw if the filepath is a valid file', async () => {
