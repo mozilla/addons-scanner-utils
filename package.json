@@ -41,7 +41,7 @@
     "prettier": "1.19.1",
     "pretty-quick": "^2.0.0",
     "rimraf": "^3.0.0",
-    "sinon": "^7.4.2",
+    "sinon": "^8.0.0",
     "supertest": "^4.0.2",
     "ts-jest": "^24.1.0",
     "type-coverage": "^2.3.0",
