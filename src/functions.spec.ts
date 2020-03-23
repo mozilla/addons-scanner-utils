@@ -100,9 +100,7 @@ describe(__filename, () => {
         requiredApiKeyParam,
       })(okHandler);
 
-      const response = await request(app)
-        .post('/')
-        .send({});
+      const response = await request(app).post('/').send({});
 
       expect(response.status).toEqual(400);
       expect(response.body).toMatchObject({
