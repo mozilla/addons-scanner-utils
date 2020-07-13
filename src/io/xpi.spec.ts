@@ -372,9 +372,7 @@ describe(__filename, () => {
       const myXpi = createXpi();
 
       expect(() => {
-        // We test the guard that prevents an invalid second argument value.
-        // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-        // @ts-ignore
+        // @ts-expect-error: we test the guard that prevents an invalid second argument value.
         myXpi.getFile('whatever-file', 'whatever');
       }).toThrow('Unexpected fileStreamType value "whatever"');
     });

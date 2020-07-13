@@ -91,20 +91,16 @@ describe(__filename, () => {
 
     it('should ignore undefined scan file callbacks', () => {
       const io = createIOBase();
-      // We ignore the TS error below because we want to test the guard that
-      // prevents undefined callbacks.
-      // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-      // @ts-ignore
+      // @ts-expect-error: we ignore the TS error below because we want to test
+      // the guard that prevents undefined callbacks.
       io.setScanFileCallback(undefined);
       expect(io.shouldScanFile('manifest.json', false)).toBeTruthy();
     });
 
     it('should ignore a non-function scan file callback', () => {
       const io = createIOBase();
-      // We ignore the TS error below because we want to test the guard that
-      // prevents callbacks that are not functions.
-      // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-      // @ts-ignore
+      // @ts-expect-error: we ignore the TS error below because we want to test
+      // the guard that prevents callbacks that are not functions.
       io.setScanFileCallback(42); // this is not a function
       expect(io.shouldScanFile('manifest.json', false)).toBeTruthy();
     });

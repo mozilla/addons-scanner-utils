@@ -7,7 +7,7 @@ import { Stderr } from '../stdio';
 
 type ScanFileFunction = (_path: string, isDirectory: boolean) => boolean;
 
-type Files = object;
+type Files = Record<string, unknown>;
 
 export type IOBaseConstructorParams = {
   filepath: string;
@@ -22,7 +22,7 @@ export class IOBase {
 
   stderr: Stderr;
 
-  files: object;
+  files: Files;
 
   entries: string[];
 
@@ -92,8 +92,8 @@ export class IOBase {
     return files;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async getFiles(optionalArgument?: Function): Promise<object> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/ban-types
+  async getFiles(optionalArgument?: Function): Promise<Files> {
     throw new Error('getFiles is not implemented');
   }
 
