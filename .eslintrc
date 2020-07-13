@@ -39,6 +39,9 @@
     }],
     // This rule is annoying and does not add any value.
     "@typescript-eslint/camelcase": "off",
+    "@typescript-eslint/ban-ts-comment": ["error", {
+      "ts-expect-error": "allow-with-description",
+    }],
   },
   "settings": {
     "import/resolver": {
