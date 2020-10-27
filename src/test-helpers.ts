@@ -1,5 +1,7 @@
 import { Readable } from 'stream';
 
+import { ZipFile, RandomAccessReader } from 'yauzl';
+
 import { Stderr, Stdout } from './stdio';
 
 export const createFakeStdout = (): Stdout => {
@@ -44,4 +46,34 @@ export const createFakeFsStats = ({
     isDirectory: () => isDirectory,
     isFile: () => isFile,
   };
+};
+
+class FakeRandomAccessReader extends RandomAccessReader {}
+
+export const createFakeZipFile = ({
+  autoClose = true,
+  centralDirectoryOffset = 0,
+  comment = '',
+  decodeStrings = true,
+  // This is set to `1` to avoid an error with `RandomAccessReader.unref()`
+  // because we are using a `FakeRandomAccessReader`
+  entryCount = 1,
+  fileSize = 0,
+  // This is set to `true` to avoid an error due to the ZipFile trying to
+  // automatically load the entries (because `entryCount = 1` above).
+  lazyEntries = true,
+  reader = new FakeRandomAccessReader(),
+  validateEntrySizes = true,
+} = {}): ZipFile => {
+  return new ZipFile(
+    reader,
+    centralDirectoryOffset,
+    fileSize,
+    entryCount,
+    comment,
+    autoClose,
+    lazyEntries,
+    decodeStrings,
+    validateEntrySizes,
+  );
 };
