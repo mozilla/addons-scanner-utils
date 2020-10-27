@@ -7,7 +7,7 @@ import { oneLine } from 'common-tags';
 
 import { IOBaseConstructorParams, IOBase } from './base';
 
-export type Files = { [filename: string]: Entry };
+type Files = { [filename: string]: Entry };
 
 type XpiConstructorParams = IOBaseConstructorParams & {
   autoClose?: boolean;
