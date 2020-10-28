@@ -34,11 +34,11 @@ export class Xpi extends IOBase {
 
   constructor({
     autoClose = true,
-    filepath,
+    filePath,
     stderr,
     zipLib = yauzl,
   }: XpiConstructorParams) {
-    super({ filepath, stderr });
+    super({ filePath, stderr });
 
     this.files = {};
     this.autoClose = autoClose;

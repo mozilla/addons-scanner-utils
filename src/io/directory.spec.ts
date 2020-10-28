@@ -10,10 +10,10 @@ describe(__filename, () => {
   };
 
   const createDirectory = ({
-    filepath = 'src/tests/fixtures/io/',
+    filePath = 'src/tests/fixtures/io/',
     stderr = createFakeStderr(),
   } = {}) => {
-    return new Directory({ filepath, stderr });
+    return new Directory({ filePath, stderr });
   };
 
   describe('Directory.getFiles()', () => {

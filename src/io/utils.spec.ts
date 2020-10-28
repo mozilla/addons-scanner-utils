@@ -98,7 +98,7 @@ describe(__filename, () => {
       );
     });
 
-    it('does not throw if the filepath is a valid file', async () => {
+    it('does not throw if the filePath is a valid file', async () => {
       const _lstat = jest
         .fn()
         .mockReturnValue(createFakeFsStats({ isFile: true }));
@@ -106,7 +106,7 @@ describe(__filename, () => {
       await checkFileExists('some-file.js', { _lstat });
     });
 
-    it('does not throw if the filepath is a valid directory', async () => {
+    it('does not throw if the filePath is a valid directory', async () => {
       const _lstat = jest
         .fn()
         .mockReturnValue(createFakeFsStats({ isDirectory: true }));

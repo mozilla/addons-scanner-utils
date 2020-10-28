@@ -45,13 +45,13 @@ export class Crx extends Xpi {
   parseCRX: typeof defaultParseCRX;
 
   constructor({
-    filepath,
+    filePath,
     stderr,
     fs = defaultFs,
     parseCRX = defaultParseCRX,
     zipLib = yauzl,
   }: CrxConstructorParams) {
-    super({ filepath, stderr, zipLib, autoClose: true });
+    super({ filePath, stderr, zipLib, autoClose: true });
 
     this.fs = fs;
     this.parseCRX = parseCRX;

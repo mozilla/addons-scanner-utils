@@ -16,8 +16,8 @@ type DirectoryConstructorParams = IOBaseConstructorParams;
 export class Directory extends IOBase {
   files: Files;
 
-  constructor({ filepath, stderr }: DirectoryConstructorParams) {
-    super({ filepath, stderr });
+  constructor({ filePath, stderr }: DirectoryConstructorParams) {
+    super({ filePath, stderr });
 
     this.files = {};
   }
