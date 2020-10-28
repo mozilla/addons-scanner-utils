@@ -10,7 +10,7 @@ type ScanFileFunction = (_path: string, isDirectory: boolean) => boolean;
 type Files = Record<string, unknown>;
 
 export type IOBaseConstructorParams = {
-  filepath: string;
+  filePath: string;
   stderr: Stderr;
 };
 
@@ -30,8 +30,8 @@ export class IOBase {
 
   shouldScanFile: ScanFileFunction;
 
-  constructor({ filepath, stderr }: IOBaseConstructorParams) {
-    this.path = filepath;
+  constructor({ filePath, stderr }: IOBaseConstructorParams) {
+    this.path = filePath;
     this.stderr = stderr;
     this.files = {};
     this.entries = [];

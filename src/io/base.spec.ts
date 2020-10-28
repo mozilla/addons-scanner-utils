@@ -4,18 +4,18 @@ import { createFakeStderr } from '../test-helpers';
 
 describe(__filename, () => {
   const createIOBase = ({
-    filepath = 'foo/bar/',
+    filePath = 'foo/bar/',
     stderr = createFakeStderr(),
   } = {}) => {
-    return new IOBase({ filepath, stderr });
+    return new IOBase({ filePath, stderr });
   };
 
   describe('IOBase()', () => {
     it('should init class props as expected', () => {
-      const filepath = 'foo/not-bar';
-      const io = createIOBase({ filepath });
+      const filePath = 'foo/not-bar';
+      const io = createIOBase({ filePath });
 
-      expect(io.path).toEqual(filepath);
+      expect(io.path).toEqual(filePath);
       expect(io.entries.length).toEqual(0);
       expect(Object.keys(io.files).length).toEqual(0);
       expect(typeof io.files).toEqual('object');

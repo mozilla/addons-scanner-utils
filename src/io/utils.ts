@@ -50,15 +50,15 @@ export function walkPromise(
 }
 
 export async function checkFileExists(
-  filepath: string,
+  filePath: string,
   { _lstat = lstat } = {},
 ) {
   const invalidMessage = new Error(
-    `Path "${filepath}" is not a file or directory or does not exist.`,
+    `Path "${filePath}" is not a file or directory or does not exist.`,
   );
 
   try {
-    const stats = await _lstat(filepath);
+    const stats = await _lstat(filePath);
 
     if (stats.isFile() === true || stats.isDirectory() === true) {
       return stats;

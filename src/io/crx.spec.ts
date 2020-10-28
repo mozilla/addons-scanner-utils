@@ -81,13 +81,13 @@ describe(__filename, () => {
   });
 
   const createCrx = ({
-    filepath = 'foo/bar',
+    filePath = 'foo/bar',
     stderr = createFakeStderr(),
     zipLib = fakeZipLib,
     fs = defaultFs,
     parseCRX = defaultParseCRX,
   } = {}) => {
-    return new Crx({ filepath, stderr, zipLib, fs, parseCRX });
+    return new Crx({ filePath, stderr, zipLib, fs, parseCRX });
   };
 
   describe('open()', () => {
@@ -123,7 +123,7 @@ describe(__filename, () => {
 
     it('should open a CRX and return a zip', async () => {
       const myCrx = new Crx({
-        filepath: 'src/tests/fixtures/io/extension.crx',
+        filePath: 'src/tests/fixtures/io/extension.crx',
         stderr: createFakeStderr(),
       });
 
@@ -135,7 +135,7 @@ describe(__filename, () => {
 
     it('should open a CRX3 and return a zip', async () => {
       const myCrx = new Crx({
-        filepath: 'src/tests/fixtures/io/crx3.crx',
+        filePath: 'src/tests/fixtures/io/crx3.crx',
         stderr: createFakeStderr(),
       });
 
@@ -147,7 +147,7 @@ describe(__filename, () => {
 
     it('should not accept a regular zip file as a CRX file', async () => {
       const notCrx = new Crx({
-        filepath: 'src/tests/fixtures/io/simple-archive.zip',
+        filePath: 'src/tests/fixtures/io/simple-archive.zip',
         stderr: createFakeStderr(),
       });
 
@@ -186,7 +186,7 @@ describe(__filename, () => {
     });
 
     it('should init class props as expected', () => {
-      const myCrx = createCrx({ filepath: 'foo/bar' });
+      const myCrx = createCrx({ filePath: 'foo/bar' });
 
       expect(myCrx.path).toEqual('foo/bar');
       expect(typeof myCrx.files).toEqual('object');
@@ -194,7 +194,7 @@ describe(__filename, () => {
     });
 
     it('should return cached data when available', async () => {
-      const myCrx = createCrx({ filepath: 'foo/bar' });
+      const myCrx = createCrx({ filePath: 'foo/bar' });
       myCrx.files = {
         'manifest.json': installFileEntry,
         'chrome.manifest': chromeManifestEntry,

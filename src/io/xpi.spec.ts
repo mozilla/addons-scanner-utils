@@ -95,11 +95,11 @@ describe(__filename, () => {
 
   const createXpi = ({
     autoClose = true,
-    filepath = 'foo/bar',
+    filePath = 'foo/bar',
     stderr = createFakeStderr(),
     zipLib = fakeZipLib,
   } = {}) => {
-    return new Xpi({ filepath, autoClose, stderr, zipLib });
+    return new Xpi({ filePath, autoClose, stderr, zipLib });
   };
 
   describe('open()', () => {
@@ -195,10 +195,10 @@ describe(__filename, () => {
     });
 
     it('should init class props as expected', () => {
-      const filepath = 'foo/bar';
-      const myXpi = createXpi({ filepath });
+      const filePath = 'foo/bar';
+      const myXpi = createXpi({ filePath });
 
-      expect(myXpi.path).toEqual(filepath);
+      expect(myXpi.path).toEqual(filePath);
       expect(typeof myXpi.files).toEqual('object');
       expect(Object.keys(myXpi.files).length).toEqual(0);
     });
@@ -322,7 +322,7 @@ describe(__filename, () => {
     it('throws an exception when a duplicate entry has been found', async () => {
       const xpi = new Xpi({
         stderr: createFakeStderr(),
-        filepath: 'src/tests/fixtures/io/archive-with-duplicate-files.zip',
+        filePath: 'src/tests/fixtures/io/archive-with-duplicate-files.zip',
       });
 
       await expect(xpi.getFiles()).rejects.toThrow('DuplicateZipEntry');
@@ -331,7 +331,7 @@ describe(__filename, () => {
     it('throws an exception when a duplicate entry has been found, even when autoClose is disabled', async () => {
       const xpi = new Xpi({
         autoClose: false,
-        filepath: 'src/tests/fixtures/io/archive-with-duplicate-files.zip',
+        filePath: 'src/tests/fixtures/io/archive-with-duplicate-files.zip',
         stderr: createFakeStderr(),
       });
 
@@ -653,7 +653,7 @@ describe(__filename, () => {
     it('closes the zipfile when autoClose is disabled', async () => {
       const xpi = new Xpi({
         autoClose: false,
-        filepath: 'src/tests/fixtures/io/simple-archive.zip',
+        filePath: 'src/tests/fixtures/io/simple-archive.zip',
         stderr: createFakeStderr(),
       });
 
@@ -674,7 +674,7 @@ describe(__filename, () => {
     it('does nothing when autoClose is enabled', () => {
       const xpi = new Xpi({
         autoClose: true,
-        filepath: '',
+        filePath: '',
         stderr: createFakeStderr(),
       });
 
