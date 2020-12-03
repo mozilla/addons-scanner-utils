@@ -65,7 +65,7 @@ export class Xpi extends IOBase {
 
           this.zipfile = zipfile;
 
-          return resolve(zipfile);
+          return resolve(zipfile as ZipFile);
         },
       );
     });
