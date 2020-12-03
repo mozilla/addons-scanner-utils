@@ -81,7 +81,7 @@ export class Crx extends Xpi {
             return;
           }
 
-          resolve(zipfile);
+          resolve(zipfile as ZipFile);
         });
       });
     });
