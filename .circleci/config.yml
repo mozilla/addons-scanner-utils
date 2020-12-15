@@ -88,7 +88,7 @@ jobs:
           at: ~/addons-scanner-utils
       - run:
           name: authenticate with registry
-          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/addons-scanner-utils/.npmrc
       - run:
           name: publish package
           command: npm publish
