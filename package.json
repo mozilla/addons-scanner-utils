@@ -65,6 +65,14 @@
     "type-coverage": "type-coverage",
     "typecheck": "tsc --noEmit"
   },
+  "homepage": "https://github.com/mozilla/addons-scanner-utils",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mozilla/addons-scanner-utils.git"
+  },
+  "bugs": {
+    "url": "http://github.com/mozilla/addons-scanner-utils/issues"
+  },
   "typeCoverage": {
     "atLeast": 97
   }
