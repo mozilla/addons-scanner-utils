@@ -4,9 +4,9 @@ This is the code for the Mozilla **addons-scanner-utils** project, part of the M
 
 Before contributing, please note:
 
-- You agree to license your contributions under this [license](./LICENSE.txt)
+- You agree to license your contributions under this [license](../LICENSE.txt)
 - Please file issues before submitting pull-requests for new features or large changes that are not related to existing issues
-- Please read the [README](./README.md) for instructions on how to use the repository
+- Please read the [README](../README.md) for instructions on how to use the repository
 - Please run the test suite before writing a patch
 - Please write tests for each patch to maintain test coverage
 - Please run [prettier][] to format your code
