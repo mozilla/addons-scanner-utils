@@ -67,7 +67,7 @@ export class Directory extends IOBase {
 
   async getFileAsStream(
     _path: string,
-    { encoding } = { encoding: 'utf8' },
+    { encoding } = { encoding: 'utf8' as BufferEncoding },
   ): Promise<Readable> {
     const filePath = await this.getPath(_path);
 
@@ -109,7 +109,7 @@ export class Directory extends IOBase {
         flags: 'r',
         // This is important because you don't want to encode the bytes if you
         // are doing a binary check.
-        encoding: '',
+        encoding: '' as BufferEncoding,
         autoClose: true,
       });
 
