@@ -133,7 +133,7 @@ describe(__filename, () => {
       const readStreamEncodingNull = await myDirectory.getFileAsStream(
         'dir2/dir3/file.png',
         {
-          encoding: '',
+          encoding: '' as BufferEncoding,
         },
       );
 
