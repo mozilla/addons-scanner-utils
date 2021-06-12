@@ -1,7 +1,6 @@
 import fs from 'fs';
 import { Readable } from 'stream';
 import { EventEmitter } from 'events';
-
 import yauzl, { Entry, Options, ZipFile } from 'yauzl';
 
 import { Xpi } from './xpi';
