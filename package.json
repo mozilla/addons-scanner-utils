@@ -27,7 +27,7 @@
   "devDependencies": {
     "@types/common-tags": "^1.8.0",
     "@types/download": "8.0.1",
-    "@types/express": "4.17.12",
+    "@types/express": "4.17.13",
     "@types/jest": "^26.0.0",
     "@types/node": "^14.0.0",
     "@types/safe-compare": "^1.1.0",
