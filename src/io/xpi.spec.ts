@@ -16,7 +16,6 @@ describe(__filename, () => {
   const defaultData = {
     compressionMethod: DEFLATE_COMPRESSION,
   };
-
   const chromeManifestEntry = {
     ...defaultData,
     compressedSize: 138,
