@@ -162,7 +162,8 @@ export const createExpressApp =
               _console.error(`_unlinkFile(): ${error}`);
             });
           });
-        } catch (err) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err: any) {
           next(
             createApiError({
               message: 'failed to download file',
