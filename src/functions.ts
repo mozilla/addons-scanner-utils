@@ -162,6 +162,7 @@ export const createExpressApp =
               _console.error(`_unlinkFile(): ${error}`);
             });
           });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
           next(
             createApiError({

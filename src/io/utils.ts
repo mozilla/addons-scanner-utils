@@ -63,6 +63,7 @@ export async function checkFileExists(
     if (stats.isFile() === true || stats.isDirectory() === true) {
       return stats;
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     if (err.code !== 'ENOENT') {
       throw err;
