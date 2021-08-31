@@ -162,7 +162,7 @@ export const createExpressApp =
               _console.error(`_unlinkFile(): ${error}`);
             });
           });
-        } catch (err) {
+        } catch (err: any) {
           next(
             createApiError({
               message: 'failed to download file',

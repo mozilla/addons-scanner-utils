@@ -63,7 +63,7 @@ export async function checkFileExists(
     if (stats.isFile() === true || stats.isDirectory() === true) {
       return stats;
     }
-  } catch (err) {
+  } catch (err: any) {
     if (err.code !== 'ENOENT') {
       throw err;
     }
