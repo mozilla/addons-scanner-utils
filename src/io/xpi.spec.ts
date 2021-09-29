@@ -5,6 +5,7 @@ import { EventEmitter } from 'events';
 import yauzl, { Entry, ZipFile } from 'yauzl';
 import realSinon, { SinonSandbox, SinonStub } from 'sinon';
 
+import { DuplicateZipEntryError, InvalidZipFileError } from '../errors';
 import { Xpi } from './xpi';
 import { DEFLATE_COMPRESSION, NO_COMPRESSION } from './const';
 import {
@@ -306,9 +307,11 @@ describe(__filename, () => {
         entryCallback.call(null, dupeInstallFileEntry);
       };
 
-      await expect(myXpi.getFiles(onEventsSubscribed)).rejects.toThrow(
-        'DuplicateZipEntry',
+      const promise = myXpi.getFiles(onEventsSubscribed);
+      await expect(promise).rejects.toThrow(
+        'Entry "manifest.json" has already been seen',
       );
+      await expect(promise).rejects.toThrow(DuplicateZipEntryError);
     });
 
     it('should reject on errors in open()', async () => {
@@ -325,7 +328,7 @@ describe(__filename, () => {
         filePath: 'src/tests/fixtures/io/archive-with-duplicate-files.zip',
       });
 
-      await expect(xpi.getFiles()).rejects.toThrow('DuplicateZipEntry');
+      await expect(xpi.getFiles()).rejects.toThrow(DuplicateZipEntryError);
     });
 
     it('throws an exception when a duplicate entry has been found, even when autoClose is disabled', async () => {
@@ -335,7 +338,20 @@ describe(__filename, () => {
         stderr: createFakeStderr(),
       });
 
-      await expect(xpi.getFiles()).rejects.toThrow('DuplicateZipEntry');
+      await expect(xpi.getFiles()).rejects.toThrow(DuplicateZipEntryError);
+
+      xpi.close();
+    });
+
+    it('throws a InvalidZipFileError exception on xpi files with invalid characters', async () => {
+      const xpi = new Xpi({
+        autoClose: false,
+        filePath:
+          'src/tests/fixtures/io/archive-with-invalid-chars-in-filenames.zip',
+        stderr: createFakeStderr(),
+      });
+
+      await expect(xpi.getFiles()).rejects.toThrow(InvalidZipFileError);
 
       xpi.close();
     });
