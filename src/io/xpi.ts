@@ -6,6 +6,7 @@ import stripBomStream from 'strip-bom-stream';
 import { oneLine } from 'common-tags';
 
 import { IOBaseConstructorParams, IOBase } from './base';
+import { InvalidZipFileError, DuplicateZipEntryError } from '../errors';
 
 type Files = { [filename: string]: Entry };
 
@@ -57,7 +58,17 @@ export class Xpi extends IOBase {
 
       this.zipLib.open(
         this.path,
-        { autoClose: this.autoClose },
+        {
+          autoClose: this.autoClose,
+          // Enable checks on invalid chars in zip entries filenames.
+          strictFileNames: true,
+          // Decode automatically filenames and zip entries content from buffer into strings
+          // and autodetects their encoding.
+          //
+          // NOTE: this is also mandatory because without this option set to true
+          // strictFileNames option is ignored.
+          decodeStrings: true,
+        },
         (err, zipfile) => {
           if (err) {
             return reject(err);
@@ -84,8 +95,8 @@ export class Xpi extends IOBase {
         in package`);
 
       reject(
-        new Error(oneLine`DuplicateZipEntry: Entry
-        "${entry.fileName}" has already been seen`),
+        new DuplicateZipEntryError(oneLine`Entry "${entry.fileName}" has already
+          been seen`),
       );
       return;
     }
@@ -111,6 +122,10 @@ export class Xpi extends IOBase {
     const zipfile = await this.open();
 
     return new Promise((resolve, reject) => {
+      zipfile.on('error', (err: Error) => {
+        reject(new InvalidZipFileError(err.message));
+      });
+
       zipfile.on('entry', (entry: Entry) => {
         this.handleEntry(entry, reject);
       });
