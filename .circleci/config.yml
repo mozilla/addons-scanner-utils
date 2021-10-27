@@ -3,6 +3,9 @@
 # NPM_TOKEN - A valid NPM token for releases
 version: 2.1
 
+orbs:
+  codecov: codecov/codecov@3.2.0
+
 references:
   defaults: &defaults
     working_directory: ~/addons-scanner-utils
@@ -59,6 +62,7 @@ jobs:
       - run:
           name: unit tests
           command: yarn test-ci
+      - codecov/upload
       # Make sure we can build a production package.
       - run: yarn pack
       - run: yarn typecheck
