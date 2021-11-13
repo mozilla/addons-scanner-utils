@@ -11,7 +11,7 @@
   "license": "MPL-2.0",
   "dependencies": {
     "@types/yauzl": "2.9.2",
-    "common-tags": "1.8.0",
+    "common-tags": "1.8.1",
     "first-chunk-stream": "3.0.0",
     "strip-bom-stream": "4.0.0",
     "upath": "2.0.1",
