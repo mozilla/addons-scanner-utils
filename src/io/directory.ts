@@ -6,8 +6,8 @@ import FirstChunkStream from 'first-chunk-stream';
 import stripBomStream from 'strip-bom-stream';
 import { oneLine } from 'common-tags';
 
-import { IOBase, IOBaseConstructorParams } from './base';
-import { walkPromise } from './utils';
+import { IOBase, IOBaseConstructorParams } from './base.js';
+import { walkPromise } from './utils.js';
 
 type Files = { [filename: string]: { size: number } };
 

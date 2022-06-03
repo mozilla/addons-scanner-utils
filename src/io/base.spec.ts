@@ -1,8 +1,8 @@
-import { IOBase } from './base';
-import { FLAGGED_FILE_MAGIC_NUMBERS_LENGTH } from './const';
-import { createFakeStderr } from '../test-helpers';
+import { IOBase } from './base.js';
+import { FLAGGED_FILE_MAGIC_NUMBERS_LENGTH } from './constants.js';
+import { createFakeStderr } from '../test-helpers.js';
 
-describe(__filename, () => {
+describe('io/base', () => {
   const createIOBase = ({
     filePath = 'foo/bar/',
     stderr = createFakeStderr(),

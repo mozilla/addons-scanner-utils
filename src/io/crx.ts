@@ -2,8 +2,8 @@ import defaultFs from 'fs';
 
 import yauzl, { ZipFile } from 'yauzl';
 
-import { IOBaseConstructorParams } from './base';
-import { Xpi } from './xpi';
+import { IOBaseConstructorParams } from './base.js';
+import { Xpi } from './xpi.js';
 
 export function defaultParseCRX(buf: Buffer): Buffer {
   if (buf.readUInt32BE(0) !== 0x43723234) {

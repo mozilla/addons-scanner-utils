@@ -1,7 +1,7 @@
-import { WalkPromiseOptions, checkFileExists, walkPromise } from './utils';
-import { createFakeFsStats, createFakeStderr } from '../test-helpers';
+import { WalkPromiseOptions, checkFileExists, walkPromise } from './utils.js';
+import { createFakeFsStats, createFakeStderr } from '../test-helpers.js';
 
-describe(__filename, () => {
+describe('io/utils', () => {
   describe('walkPromise()', () => {
     const _walkPromise = ({
       path = 'src/tests/fixtures/io/',

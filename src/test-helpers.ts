@@ -2,7 +2,7 @@ import { Readable } from 'stream';
 
 import { ZipFile, RandomAccessReader } from 'yauzl';
 
-import { Stderr, Stdout } from './stdio';
+import { Stderr, Stdout } from './stdio.js';
 
 export const createFakeStdout = (): Stdout => {
   return {

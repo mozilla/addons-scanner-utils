@@ -3,9 +3,9 @@ import {
   createConsoleStdout,
   createInMemoryStderr,
   createInMemoryStdout,
-} from './stdio';
+} from './stdio.js';
 
-describe(__filename, () => {
+describe('stdio', () => {
   const createFakeConsole = () => {
     return {
       ...console,

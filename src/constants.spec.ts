@@ -1,6 +1,6 @@
-import { ECMA_VERSION } from './const';
+import { ECMA_VERSION } from './constants.js';
 
-describe(__filename, () => {
+describe('constants', () => {
   it('exports an ECMA_VERSION constant', () => {
     expect(ECMA_VERSION).toEqual(13);
   });

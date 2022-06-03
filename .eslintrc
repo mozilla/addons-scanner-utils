@@ -16,9 +16,8 @@
         ]
       }
     ],
-    "import/extensions": ["error", "never", {
-      "json": "always",
-    }],
+    // Disabled due to https://github.com/import-js/eslint-plugin-import/issues/2104
+    "import/extensions": [0, "never"],
     // This rule conflicts with our convention.
     "jest/valid-describe": "off",
     // This is not needed for this project.
@@ -32,20 +31,13 @@
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/no-explicit-any": "error",
     "@typescript-eslint/explicit-member-accessibility": "off",
-    "import/no-unresolved": ["error", {
-      ignore: ['estree'],
-    }],
+    // This is sad but we have to disable this rule to allow TS to generate
+    // correct a ESM package.
+    "import/no-unresolved": "off",
     // This rule is annoying and does not add any value.
     "@typescript-eslint/camelcase": "off",
     "@typescript-eslint/ban-ts-comment": ["error", {
       "ts-expect-error": "allow-with-description",
-    }],
-  },
-  "settings": {
-    "import/resolver": {
-      "node": {
-        "extensions": [".js", ".ts"]
-      }
-    }
+    }]
   }
 }

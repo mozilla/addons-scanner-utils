@@ -2,10 +2,16 @@
   "name": "addons-scanner-utils",
   "version": "9.0.0",
   "description": "Various addons related helpers to build CLIs.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./io": "./dist/io/index.js",
+    "./test-helpers": "./dist/test-helpers.js"
+  },
   "files": [
-    "dist/**/*"
+    "dist/**"
   ],
   "author": "Mozilla Add-ons Team",
   "license": "MPL-2.0",
@@ -42,12 +48,12 @@
     "@types/express": "4.17.17",
     "@types/jest": "^29.0.0",
     "@types/node": "^18.0.0",
-    "@types/node-fetch": "^2.6.2",
+    "@types/node-fetch": "^2.6.3",
     "@types/safe-compare": "^1.1.0",
     "@types/sinon": "^10.0.0",
     "@types/supertest": "^2.0.8",
-    "@typescript-eslint/eslint-plugin": "^5.0.0",
-    "@typescript-eslint/parser": "^5.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.58.0",
+    "@typescript-eslint/parser": "^5.58.0",
     "body-parser": "1.20.2",
     "eslint": "^8.1.0",
     "eslint-config-amo": "^5.0.0",

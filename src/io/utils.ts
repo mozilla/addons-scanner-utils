@@ -4,7 +4,7 @@ import { promisify } from 'util';
 
 import upath from 'upath';
 
-import { Stderr } from '../stdio';
+import { Stderr } from '../stdio.js';
 
 export const lstat = promisify(fs.lstat);
 export const readFile = promisify(fs.readFile);

@@ -3,12 +3,12 @@ import defaultFs from 'fs';
 import yauzl, { Entry, ZipFile } from 'yauzl';
 import realSinon, { SinonSandbox, SinonStub } from 'sinon';
 
-import { defaultParseCRX, Crx } from './crx';
-import { Files } from './xpi';
-import { DEFLATE_COMPRESSION, NO_COMPRESSION } from './const';
-import { createFakeStderr, createFakeZipFile } from '../test-helpers';
+import { defaultParseCRX, Crx } from './crx.js';
+import { Files } from './xpi.js';
+import { DEFLATE_COMPRESSION, NO_COMPRESSION } from './constants.js';
+import { createFakeStderr, createFakeZipFile } from '../test-helpers.js';
 
-describe(__filename, () => {
+describe('io/crx', () => {
   const defaultData = {
     compressionMethod: DEFLATE_COMPRESSION,
   };

@@ -5,8 +5,8 @@ import FirstChunkStream from 'first-chunk-stream';
 import stripBomStream from 'strip-bom-stream';
 import { oneLine } from 'common-tags';
 
-import { IOBaseConstructorParams, IOBase } from './base';
-import { InvalidZipFileError, DuplicateZipEntryError } from '../errors';
+import { IOBaseConstructorParams, IOBase } from './base.js';
+import { InvalidZipFileError, DuplicateZipEntryError } from '../errors.js';
 
 export type Files = { [filename: string]: Entry };
 

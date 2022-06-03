@@ -2,8 +2,11 @@ import { Readable } from 'stream';
 
 import { oneLine } from 'common-tags';
 
-import { FLAGGED_FILE_MAGIC_NUMBERS_LENGTH, MAX_FILE_SIZE_MB } from './const';
-import { Stderr } from '../stdio';
+import {
+  FLAGGED_FILE_MAGIC_NUMBERS_LENGTH,
+  MAX_FILE_SIZE_MB,
+} from './constants.js';
+import { Stderr } from '../stdio.js';
 
 type ScanFileFunction = (_path: string, isDirectory: boolean) => boolean;
 

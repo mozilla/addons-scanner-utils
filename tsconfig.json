@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
+    "outDir": "dist",
     "declaration": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "resolveJsonModule": true,
     "strict": true,
-    "target": "es2015",
+    "target": "es2022",
     "typeRoots" : ["./node_modules/@types", "./src/@types"]
   }
 }

@@ -1,10 +1,10 @@
 import { Readable } from 'stream';
 import { EventEmitter } from 'events';
 
-import { Directory } from './directory';
-import { createFakeStderr, readStringFromStream } from '../test-helpers';
+import { Directory } from './directory.js';
+import { createFakeStderr, readStringFromStream } from '../test-helpers.js';
 
-describe(__filename, () => {
+describe('io/directory', () => {
   const fakeFile = {
     size: 123,
   };

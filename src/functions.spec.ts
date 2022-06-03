@@ -11,11 +11,11 @@ import {
   RequestWithFiles,
   createApiError,
   createExpressApp,
-} from './functions';
+} from './functions.js';
 
 jest.mock('node-fetch');
 
-describe(__filename, () => {
+describe('functions', () => {
   describe('createApiError', () => {
     it('returns an API error with a message', () => {
       const message = 'oops, error';
