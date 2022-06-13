@@ -24,6 +24,23 @@
     "express": "4.18.1",
     "safe-compare": "1.1.4"
   },
+  "peerDependenciesMeta": {
+    "@types/download": {
+      "optional": true
+    },
+    "body-parser": {
+      "optional": true
+    },
+    "download": {
+      "optional": true
+    },
+    "express": {
+      "optional": true
+    },
+    "safe-compare": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@types/common-tags": "^1.8.0",
     "@types/download": "8.0.1",
