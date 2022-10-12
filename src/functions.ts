@@ -1,6 +1,9 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { createWriteStream } from 'node:fs';
+import { pipeline } from 'node:stream';
+import { promisify } from 'node:util';
 
 import express, {
   NextFunction,
@@ -9,7 +12,7 @@ import express, {
   Response,
 } from 'express';
 import bodyParser from 'body-parser';
-import download from 'download';
+import fetch from 'node-fetch';
 import safeCompare from 'safe-compare';
 
 type ApiError = Error & {
@@ -42,7 +45,7 @@ export type RequestWithFiles = Request & {
 
 export type FunctionConfig = {
   _console?: typeof console;
-  _download?: typeof download;
+  _fetch?: typeof fetch;
   _process?: typeof process;
   _unlinkFile?: typeof fs.promises.unlink;
   apiKeyEnvVarName?: string;
@@ -55,7 +58,7 @@ export type FunctionConfig = {
 export const createExpressApp =
   ({
     _console = console,
-    _download = download,
+    _fetch = fetch,
     _process = process,
     _unlinkFile = fs.promises.unlink,
     apiKeyEnvVarName = 'LAMBDA_API_KEY',
@@ -150,9 +153,13 @@ export const createExpressApp =
         }
 
         try {
-          await _download(downloadURL, tmpDir, { filename: xpiFilename });
-
           const xpiFilepath = path.join(tmpDir, xpiFilename);
+          const streamPipeline = promisify(pipeline);
+          const response = await _fetch(downloadURL);
+          if (!response.ok) {
+            throw new Error(`unexpected response ${response.statusText}`);
+          }
+          await streamPipeline(response.body, createWriteStream(xpiFilepath));
 
           req.xpiFilepath = xpiFilepath;
 

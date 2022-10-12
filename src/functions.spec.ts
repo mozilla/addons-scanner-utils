@@ -2,6 +2,7 @@ import path from 'path';
 
 import express from 'express';
 import request from 'supertest';
+import fetch from 'node-fetch';
 
 import {
   FunctionConfig,
@@ -9,6 +10,8 @@ import {
   createApiError,
   createExpressApp,
 } from './functions';
+
+jest.mock('node-fetch');
 
 describe(__filename, () => {
   describe('createApiError', () => {
@@ -56,7 +59,7 @@ describe(__filename, () => {
 
     const _createExpressApp = ({
       _console,
-      _download = jest.fn() as FunctionConfig['_download'],
+      _fetch = jest.mocked(fetch),
       _unlinkFile = jest.fn().mockReturnValue(Promise.resolve()),
       allowedOrigin = testAllowedOrigin,
       apiKey = 'valid api key',
@@ -75,7 +78,7 @@ describe(__filename, () => {
 
       const decorator = createExpressApp({
         _console,
-        _download,
+        _fetch,
         _process,
         _unlinkFile,
         apiKeyEnvVarName,
@@ -202,12 +205,12 @@ describe(__filename, () => {
     });
 
     it('downloads the file pointed by the download_url parameter', async () => {
-      const _download = jest.fn();
+      const _fetch = jest.mocked(fetch);
       const downloadURL = `${testAllowedOrigin}/an-addon.xpi`;
       const tmpDir = '/some/tmp/dir';
       const xpiFilename = 'filename-for-uploaded.xpi';
       const { app, sendApiKey } = _createExpressApp({
-        _download,
+        _fetch,
         allowedOrigin: testAllowedOrigin,
         tmpDir,
         xpiFilename,
@@ -223,17 +226,15 @@ describe(__filename, () => {
         xpiFilepath: path.join(tmpDir, xpiFilename),
       });
 
-      expect(_download).toHaveBeenCalledWith(downloadURL, tmpDir, {
-        filename: xpiFilename,
-      });
+      expect(_fetch).toHaveBeenCalledWith(downloadURL);
     });
 
     it('returns a 500 when downloading the file has failed', async () => {
       const error = 'download has failed';
-      const _download = jest.fn().mockImplementation(() => {
+      const _fetch = jest.mocked(fetch).mockImplementation(() => {
         throw new Error(error);
       });
-      const { app, sendApiKey } = _createExpressApp({ _download })(okHandler);
+      const { app, sendApiKey } = _createExpressApp({ _fetch })(okHandler);
 
       const response = await sendApiKey(request(app).post('/')).send({
         download_url: `${testAllowedOrigin}/some.xpi`,
