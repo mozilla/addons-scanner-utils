@@ -1,8 +1,10 @@
 import path from 'path';
+import os from 'os';
+import { rm, mkdir } from 'node:fs/promises';
 
 import express from 'express';
 import request from 'supertest';
-import fetch from 'node-fetch';
+import fetch, { Response } from 'node-fetch';
 
 import {
   FunctionConfig,
@@ -46,6 +48,8 @@ describe(__filename, () => {
   });
 
   describe('createExpressApp', () => {
+    const TMP_DIR_FOR_TESTS = path.join(os.tmpdir(), 'addons-scanner-utils');
+
     const testAllowedOrigin =
       'https://dont-use-this-subdomain.addons.mozilla.org';
 
@@ -57,16 +61,20 @@ describe(__filename, () => {
       return res.json({ ok: true, xpiFilepath: req.xpiFilepath });
     };
 
+    const fakeFetch = jest.mocked(fetch).mockReturnValue(
+      // body should be an Iterable so let's fake it here, too.
+      Promise.resolve({ ok: true, body: [] } as unknown as Response),
+    );
+
     const _createExpressApp = ({
       _console,
-      _fetch = jest.mocked(fetch),
+      _fetch = fakeFetch,
       _unlinkFile = jest.fn().mockReturnValue(Promise.resolve()),
       allowedOrigin = testAllowedOrigin,
       apiKey = 'valid api key',
       apiKeyEnvVarName = 'API_KEY',
       requiredApiKeyParam,
       requiredDownloadUrlParam,
-      tmpDir,
       xpiFilename,
     }: Partial<
       FunctionConfig & { apiKey: string; allowedOrigin: string }
@@ -84,7 +92,7 @@ describe(__filename, () => {
         apiKeyEnvVarName,
         requiredApiKeyParam,
         requiredDownloadUrlParam,
-        tmpDir,
+        tmpDir: TMP_DIR_FOR_TESTS,
         xpiFilename,
       });
 
@@ -95,6 +103,14 @@ describe(__filename, () => {
         },
       });
     };
+
+    beforeEach(async () => {
+      await mkdir(TMP_DIR_FOR_TESTS);
+    });
+
+    afterEach(async () => {
+      await rm(TMP_DIR_FOR_TESTS, { recursive: true, force: true });
+    });
 
     it('returns a 400 when requiredApiKeyParam is missing', async () => {
       const requiredApiKeyParam = 'key';
@@ -205,14 +221,12 @@ describe(__filename, () => {
     });
 
     it('downloads the file pointed by the download_url parameter', async () => {
-      const _fetch = jest.mocked(fetch);
+      const _fetch = fakeFetch;
       const downloadURL = `${testAllowedOrigin}/an-addon.xpi`;
-      const tmpDir = '/some/tmp/dir';
       const xpiFilename = 'filename-for-uploaded.xpi';
       const { app, sendApiKey } = _createExpressApp({
         _fetch,
         allowedOrigin: testAllowedOrigin,
-        tmpDir,
         xpiFilename,
       })(okHandler);
 
@@ -223,7 +237,7 @@ describe(__filename, () => {
       expect(response.status).toEqual(200);
       expect(response.body).toEqual({
         ok: true,
-        xpiFilepath: path.join(tmpDir, xpiFilename),
+        xpiFilepath: path.join(TMP_DIR_FOR_TESTS, xpiFilename),
       });
 
       expect(_fetch).toHaveBeenCalledWith(downloadURL);
@@ -231,7 +245,7 @@ describe(__filename, () => {
 
     it('returns a 500 when downloading the file has failed', async () => {
       const error = 'download has failed';
-      const _fetch = jest.mocked(fetch).mockImplementation(() => {
+      const _fetch = jest.mocked(fetch).mockImplementationOnce(() => {
         throw new Error(error);
       });
       const { app, sendApiKey } = _createExpressApp({ _fetch })(okHandler);
@@ -297,11 +311,9 @@ describe(__filename, () => {
 
     it('deletes the downloaded xpi once the response is sent', async () => {
       const _unlinkFile = jest.fn().mockReturnValue(Promise.resolve());
-      const tmpDir = '/some/tmp/dir';
       const xpiFilename = 'filename-for-uploaded.xpi';
       const { app, sendApiKey } = _createExpressApp({
         _unlinkFile,
-        tmpDir,
         xpiFilename,
       })(okHandler);
 
@@ -309,7 +321,9 @@ describe(__filename, () => {
         download_url: `${testAllowedOrigin}/some.xpi`,
       });
 
-      expect(_unlinkFile).toHaveBeenCalledWith(path.join(tmpDir, xpiFilename));
+      expect(_unlinkFile).toHaveBeenCalledWith(
+        path.join(TMP_DIR_FOR_TESTS, xpiFilename),
+      );
     });
 
     it('logs an error when deleting the downloaded xpi has failed', async () => {
