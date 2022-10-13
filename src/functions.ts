@@ -1,9 +1,8 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { createWriteStream } from 'node:fs';
-import { pipeline } from 'node:stream';
-import { promisify } from 'node:util';
+import stream from 'stream';
+import util from 'util';
 
 import express, {
   NextFunction,
@@ -154,12 +153,12 @@ export const createExpressApp =
 
         try {
           const xpiFilepath = path.join(tmpDir, xpiFilename);
-          const streamPipeline = promisify(pipeline);
+          const streamPipeline = util.promisify(stream.pipeline);
           const response = await _fetch(downloadURL);
           if (!response.ok) {
             throw new Error(`unexpected response ${response.statusText}`);
           }
-          await streamPipeline(response.body, createWriteStream(xpiFilepath));
+          await streamPipeline(response.body, fs.createWriteStream(xpiFilepath));
 
           req.xpiFilepath = xpiFilepath;
 
