@@ -158,7 +158,10 @@ export const createExpressApp =
           if (!response.ok) {
             throw new Error(`unexpected response ${response.statusText}`);
           }
-          await streamPipeline(response.body, fs.createWriteStream(xpiFilepath));
+          await streamPipeline(
+            response.body,
+            fs.createWriteStream(xpiFilepath),
+          );
 
           req.xpiFilepath = xpiFilepath;
 
