@@ -243,11 +243,31 @@ describe(__filename, () => {
       expect(_fetch).toHaveBeenCalledWith(downloadURL);
     });
 
-    it('returns a 500 when downloading the file has failed', async () => {
+    it('returns a 500 when the fetch call returns an error', async () => {
       const error = 'download has failed';
       const _fetch = jest.mocked(fetch).mockImplementationOnce(() => {
         throw new Error(error);
       });
+      const { app, sendApiKey } = _createExpressApp({ _fetch })(okHandler);
+
+      const response = await sendApiKey(request(app).post('/')).send({
+        download_url: `${testAllowedOrigin}/some.xpi`,
+      });
+
+      expect(response.status).toEqual(500);
+      expect(response.body).toMatchObject({
+        error: 'failed to download file',
+        extra_info: expect.stringMatching(error),
+      });
+    });
+
+    it('returns a 500 when downloading the file has failed', async () => {
+      const error = 'unexpected response Errôôôôrr';
+      const _fetch = jest.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        body: [],
+        statusText: 'Errôôôôrr',
+      } as unknown as Response);
       const { app, sendApiKey } = _createExpressApp({ _fetch })(okHandler);
 
       const response = await sendApiKey(request(app).post('/')).send({
