@@ -20,7 +20,7 @@
   "peerDependencies": {
     "body-parser": "1.20.1",
     "express": "4.18.2",
-    "node-fetch": "2.6.7",
+    "node-fetch": "3.3.0",
     "safe-compare": "1.1.4"
   },
   "peerDependenciesMeta": {
@@ -54,7 +54,7 @@
     "eslint-plugin-amo": "^1.10.2",
     "express": "4.18.2",
     "jest": "^29.0.0",
-    "node-fetch": "2.6.7",
+    "node-fetch": "3.3.0",
     "prettier": "2.8.1",
     "pretty-quick": "^3.0.0",
     "rimraf": "^3.0.0",
