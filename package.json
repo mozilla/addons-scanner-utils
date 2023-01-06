@@ -12,7 +12,7 @@
   "dependencies": {
     "@types/yauzl": "2.10.0",
     "common-tags": "1.8.2",
-    "first-chunk-stream": "3.0.0",
+    "first-chunk-stream": "5.0.0",
     "strip-bom-stream": "4.0.0",
     "upath": "2.0.1",
     "yauzl": "2.10.0"
