@@ -4,6 +4,7 @@ import yauzl, { Entry, ZipFile } from 'yauzl';
 import realSinon, { SinonSandbox, SinonStub } from 'sinon';
 
 import { defaultParseCRX, Crx } from './crx';
+import { Files } from './xpi';
 import { DEFLATE_COMPRESSION, NO_COMPRESSION } from './const';
 import { createFakeStderr, createFakeZipFile } from '../test-helpers';
 
@@ -32,6 +33,14 @@ describe(__filename, () => {
     uncompressedSize: 0,
     fileName: 'chrome/content/',
   } as Entry;
+
+  class CrxTest extends Crx {
+    _overrideCachedFilesForTests(files: Files) {
+      this.files = files;
+      // This marks the XPI as processed, i.e. the XPI has been read.
+      this.processed = true;
+    }
+  }
 
   let fakeZipFile: ZipFile;
   let fakeZipLib: typeof yauzl;
@@ -87,7 +96,7 @@ describe(__filename, () => {
     fs = defaultFs,
     parseCRX = defaultParseCRX,
   } = {}) => {
-    return new Crx({ filePath, stderr, zipLib, fs, parseCRX });
+    return new CrxTest({ filePath, stderr, zipLib, fs, parseCRX });
   };
 
   describe('open()', () => {
@@ -195,10 +204,10 @@ describe(__filename, () => {
 
     it('should return cached data when available', async () => {
       const myCrx = createCrx({ filePath: 'foo/bar' });
-      myCrx.files = {
+      myCrx._overrideCachedFilesForTests({
         'manifest.json': installFileEntry,
         'chrome.manifest': chromeManifestEntry,
-      };
+      });
 
       const files = await myCrx.getFiles();
 

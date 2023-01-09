@@ -6,7 +6,7 @@ import yauzl, { Entry, ZipFile } from 'yauzl';
 import realSinon, { SinonSandbox, SinonStub } from 'sinon';
 
 import { DuplicateZipEntryError, InvalidZipFileError } from '../errors';
-import { Xpi } from './xpi';
+import { Xpi, Files } from './xpi';
 import { DEFLATE_COMPRESSION, NO_COMPRESSION } from './const';
 import {
   createFakeStderr,
@@ -61,6 +61,14 @@ describe(__filename, () => {
     fileName: 'chrome/content/',
   };
 
+  class XpiTest extends Xpi {
+    _overrideCachedFilesForTests(files: Files) {
+      this.files = files;
+      // This marks the XPI as processed, i.e. the XPI has been read.
+      this.processed = true;
+    }
+  }
+
   let fakeZipFile: ZipFile;
   let fakeZipLib: typeof yauzl;
   let openReadStreamStub: SinonStub;
@@ -100,7 +108,7 @@ describe(__filename, () => {
     stderr = createFakeStderr(),
     zipLib = fakeZipLib,
   } = {}) => {
-    return new Xpi({ filePath, autoClose, stderr, zipLib });
+    return new XpiTest({ filePath, autoClose, stderr, zipLib });
   };
 
   describe('open()', () => {
@@ -206,10 +214,18 @@ describe(__filename, () => {
 
     it('should return cached data when available', async () => {
       const myXpi = createXpi();
-      myXpi.files = {
+      myXpi._overrideCachedFilesForTests({
         'manifest.json': installFileEntry,
         'chrome.manifest': chromeManifestEntry,
-      };
+      });
+
+      await expect(myXpi.getFiles()).resolves.toEqual(myXpi.files);
+      expect(openStub.called).toBeFalsy();
+    });
+
+    it('should return cached data even if the ZIP file is empty', async () => {
+      const myXpi = createXpi();
+      myXpi._overrideCachedFilesForTests({});
 
       await expect(myXpi.getFiles()).resolves.toEqual(myXpi.files);
       expect(openStub.called).toBeFalsy();
@@ -277,10 +293,10 @@ describe(__filename, () => {
     it('can be configured to exclude files when cached', async () => {
       const myXpi = createXpi();
       // Populate the file cache:
-      myXpi.files = {
+      myXpi._overrideCachedFilesForTests({
         'manifest.json': installFileEntry,
         'chrome.manifest': chromeManifestEntry,
-      };
+      });
 
       // Return the fake zip to the open callback.
       openStub.yieldsAsync(null, fakeZipFile);
@@ -389,10 +405,10 @@ describe(__filename, () => {
   describe('checkPath()', () => {
     it('should reject if path does not exist', async () => {
       const myXpi = createXpi();
-      myXpi.files = {
+      myXpi._overrideCachedFilesForTests({
         'manifest.json': installFileEntry,
         'chrome.manifest': chromeManifestEntry,
-      };
+      });
 
       await expect(myXpi.getFileAsStream('whatever')).rejects.toThrow(
         'Path "whatever" does not exist',
@@ -405,10 +421,10 @@ describe(__filename, () => {
         uncompressedSize: 1024 * 1024 * 102,
       } as Entry;
 
-      myXpi.files = {
+      myXpi._overrideCachedFilesForTests({
         'manifest.json': fakeFileMeta,
         'chrome.manifest': fakeFileMeta,
-      };
+      });
 
       await expect(myXpi.getFileAsStream('manifest.json')).rejects.toThrow(
         'File "manifest.json" is too large',
@@ -420,11 +436,10 @@ describe(__filename, () => {
       const fakeFileMeta = {
         uncompressedSize: 1024 * 1024 * 102,
       } as Entry;
-
-      myXpi.files = {
+      myXpi._overrideCachedFilesForTests({
         'manifest.json': fakeFileMeta,
         'chrome.manifest': fakeFileMeta,
-      };
+      });
 
       await expect(myXpi.getFileAsString('manifest.json')).rejects.toThrow(
         'File "manifest.json" is too large',
@@ -437,9 +452,9 @@ describe(__filename, () => {
   describe('getChunkAsBuffer()', () => {
     it('should reject if error in openReadStream', async () => {
       const myXpi = createXpi();
-      myXpi.files = {
+      myXpi._overrideCachedFilesForTests({
         'manifest.json': installFileEntry,
-      };
+      });
 
       openStub.yieldsAsync(null, fakeZipFile);
       openReadStreamStub.yieldsAsync(
@@ -454,9 +469,9 @@ describe(__filename, () => {
 
     it('should resolve with a buffer', async () => {
       const myXpi = createXpi();
-      myXpi.files = {
+      myXpi._overrideCachedFilesForTests({
         'manifest.json': installFileEntry,
-      };
+      });
 
       openStub.yieldsAsync(null, fakeZipFile);
 
@@ -477,10 +492,10 @@ describe(__filename, () => {
   describe('getFileAsStream()', () => {
     it('should reject if error in openReadStream', async () => {
       const myXpi = createXpi();
-      myXpi.files = {
+      myXpi._overrideCachedFilesForTests({
         'manifest.json': installFileEntry,
         'chrome.manifest': chromeManifestEntry,
-      };
+      });
 
       openStub.yieldsAsync(null, fakeZipFile);
       openReadStreamStub.yieldsAsync(
@@ -494,10 +509,10 @@ describe(__filename, () => {
 
     it('should resolve with a readable stream', async () => {
       const myXpi = createXpi();
-      myXpi.files = {
+      myXpi._overrideCachedFilesForTests({
         'manifest.json': installFileEntry,
         'chrome.manifest': chromeManifestEntry,
-      };
+      });
 
       openStub.yieldsAsync(null, fakeZipFile);
 
@@ -519,10 +534,10 @@ describe(__filename, () => {
 
     it('should resolve with a string', async () => {
       const myXpi = createXpi();
-      myXpi.files = {
+      myXpi._overrideCachedFilesForTests({
         'manifest.json': installFileEntry,
         'chrome.manifest': chromeManifestEntry,
-      };
+      });
 
       openStub.yieldsAsync(null, fakeZipFile);
 
@@ -540,10 +555,10 @@ describe(__filename, () => {
 
     it('should strip a BOM', async () => {
       const myXpi = createXpi();
-      myXpi.files = {
+      myXpi._overrideCachedFilesForTests({
         'manifest.json': installFileEntry,
         'chrome.manifest': chromeManifestEntry,
-      };
+      });
 
       openStub.yieldsAsync(null, fakeZipFile);
 
@@ -556,10 +571,10 @@ describe(__filename, () => {
 
     it('should reject if error in openReadStream from readAsString', async () => {
       const myXpi = createXpi();
-      myXpi.files = {
+      myXpi._overrideCachedFilesForTests({
         'manifest.json': installFileEntry,
         'chrome.manifest': chromeManifestEntry,
-      };
+      });
 
       openStub.yieldsAsync(null, fakeZipFile);
       openReadStreamStub.yields(
@@ -575,10 +590,10 @@ describe(__filename, () => {
       const fakeStreamEmitter = new EventEmitter() as Readable;
 
       const myXpi = createXpi();
-      myXpi.files = {
+      myXpi._overrideCachedFilesForTests({
         'manifest.json': installFileEntry,
         'chrome.manifest': chromeManifestEntry,
-      };
+      });
 
       myXpi.getFileAsStream = () => {
         setTimeout(() => {
@@ -596,12 +611,12 @@ describe(__filename, () => {
   describe('getFilesByExt()', () => {
     it('should return all JS files', async () => {
       const myXpi = createXpi();
-      myXpi.files = {
+      myXpi._overrideCachedFilesForTests({
         'manifest.json': installFileEntry,
         'chrome.manifest': chromeManifestEntry,
         'main.js': jsMainFileEntry,
         'secondary.js': jsSecondaryFileEntry,
-      };
+      });
 
       const jsFiles = await myXpi.getFilesByExt('.js');
       expect(jsFiles.length).toEqual(2);
@@ -615,12 +630,12 @@ describe(__filename, () => {
 
     it('should return all CSS files', async () => {
       const myXpi = createXpi();
-      myXpi.files = {
+      myXpi._overrideCachedFilesForTests({
         'other.css': installFileEntry,
         'chrome.manifest': chromeManifestEntry,
         'styles.css': jsMainFileEntry,
         'secondary.js': jsSecondaryFileEntry,
-      };
+      });
 
       const cssFiles = await myXpi.getFilesByExt('.css');
       expect(cssFiles.length).toEqual(2);
@@ -634,14 +649,14 @@ describe(__filename, () => {
 
     it('should return all HTML files', async () => {
       const myXpi = createXpi();
-      myXpi.files = {
+      myXpi._overrideCachedFilesForTests({
         'manifest.json': installFileEntry,
         'chrome.manifest': chromeManifestEntry,
         'index.html': jsMainFileEntry,
         'second.htm': jsMainFileEntry,
         'third.html': jsMainFileEntry,
         'secondary.js': jsSecondaryFileEntry,
-      };
+      });
 
       const htmlFiles = await myXpi.getFilesByExt('.html', '.htm');
       expect(htmlFiles.length).toEqual(3);
