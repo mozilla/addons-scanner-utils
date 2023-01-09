@@ -8,7 +8,7 @@ import { oneLine } from 'common-tags';
 import { IOBaseConstructorParams, IOBase } from './base';
 import { InvalidZipFileError, DuplicateZipEntryError } from '../errors';
 
-type Files = { [filename: string]: Entry };
+export type Files = { [filename: string]: Entry };
 
 type XpiConstructorParams = IOBaseConstructorParams & {
   autoClose?: boolean;
@@ -29,6 +29,8 @@ export class Xpi extends IOBase {
 
   files: Files;
 
+  processed: boolean;
+
   zipLib: typeof yauzl;
 
   zipfile: ZipFile | undefined;
@@ -41,8 +43,9 @@ export class Xpi extends IOBase {
   }: XpiConstructorParams) {
     super({ filePath, stderr });
 
-    this.files = {};
     this.autoClose = autoClose;
+    this.files = {};
+    this.processed = false;
     this.zipLib = zipLib;
   }
 
@@ -107,7 +110,7 @@ export class Xpi extends IOBase {
   async getFiles(_onEventsSubscribed?: () => void): Promise<Files> {
     // If we have already processed the file and have data on this instance
     // return that.
-    if (Object.keys(this.files).length) {
+    if (this.processed) {
       const wantedFiles: Files = {};
       Object.keys(this.files).forEach((fileName) => {
         if (this.shouldScanFile(fileName, false)) {
@@ -139,6 +142,7 @@ export class Xpi extends IOBase {
       //
       // See: https://github.com/mozilla/addons-linter/pull/43
       zipfile.on('end', () => {
+        this.processed = true;
         resolve(this.files);
       });
 
