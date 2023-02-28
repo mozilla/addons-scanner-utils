@@ -1,6 +1,6 @@
 {
   "name": "addons-scanner-utils",
-  "version": "8.4.0",
+  "version": "8.5.0",
   "description": "Various addons related helpers to build CLIs.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
