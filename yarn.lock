@@ -1802,13 +1802,13 @@ eslint-config-airbnb@19.0.4:
     object.entries "^1.1.5"
 
 eslint-config-amo@^5.0.0:
-  version "5.8.0"
-  resolved "https://registry.yarnpkg.com/eslint-config-amo/-/eslint-config-amo-5.8.0.tgz#6721336e4db90a9564562aa4591d9954f8028479"
-  integrity sha512-8mHqSi4nv1s7+blAq8zB4Q0d3K339PLAxXB5wQd0tERMfnWzfdnxyBnJDdenYy59+DH3ceJpPvW+mUeAz1P7iw==
+  version "5.9.0"
+  resolved "https://registry.yarnpkg.com/eslint-config-amo/-/eslint-config-amo-5.9.0.tgz#0028f142b7e85cadfb3c36335314236cf0e65deb"
+  integrity sha512-rE7ZNqXWE63si2imwv5it08ZSaK4hrGtlScnazIRwFpGGP5lTQklxj5YxGRLqQqWiikvLNi4zPak9+BBtwStZg==
   dependencies:
     eslint-config-airbnb "19.0.4"
     eslint-config-airbnb-base "15.0.0"
-    eslint-config-prettier "8.6.0"
+    eslint-config-prettier "8.8.0"
     eslint-plugin-import "2.27.5"
     eslint-plugin-jest "27.2.1"
     eslint-plugin-jsx-a11y "6.7.1"
@@ -1816,10 +1816,10 @@ eslint-config-amo@^5.0.0:
     eslint-plugin-react "7.32.2"
     eslint-plugin-react-hooks "4.6.0"
 
-eslint-config-prettier@8.6.0:
-  version "8.6.0"
-  resolved "https://registry.yarnpkg.com/eslint-config-prettier/-/eslint-config-prettier-8.6.0.tgz#dec1d29ab728f4fa63061774e1672ac4e363d207"
-  integrity sha512-bAF0eLpLVqP5oEVUFKpMA+NnRFICwn9X8B5jrR9FcqnYBuPbqWEjTEspPWMj5ye6czoSLDweCzSo3Ko7gGrZaA==
+eslint-config-prettier@8.8.0:
+  version "8.8.0"
+  resolved "https://registry.yarnpkg.com/eslint-config-prettier/-/eslint-config-prettier-8.8.0.tgz#bfda738d412adc917fd7b038857110efe98c9348"
+  integrity sha512-wLbQiFre3tdGgpDv67NQKnJuTlcUVYHas3k+DZCc2U2BadthoEY4B7hLPvAxaqdyOGCzuLfii2fqGph10va7oA==
 
 eslint-import-resolver-node@^0.3.7:
   version "0.3.7"
