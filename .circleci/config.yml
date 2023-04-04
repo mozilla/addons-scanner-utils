@@ -64,7 +64,12 @@ jobs:
           command: yarn test-ci
       - codecov/upload
       # Make sure we can build a production package.
-      - run: yarn pack
+      - run:
+          name: yarn pack
+          command: |
+            yarn pack
+            # The `prepack` script is supposed to remove spec files.
+            test ! -f dist/functions.spec.ts
       - run: yarn typecheck
       - run: yarn type-coverage
       - run: yarn prettier-ci
