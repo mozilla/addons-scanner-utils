@@ -68,7 +68,7 @@
   "scripts": {
     "eslint": "eslint --ext ts --ext js src/",
     "lint": "yarn eslint",
-    "prepack": "rimraf dist/ && tsc --outDir dist/ && rimraf dist/**/*.spec.* dist/*.spec.*",
+    "prepack": "rimraf dist/ && tsc --outDir dist/ && rimraf -g 'dist/**/*.spec.*' 'dist/*.spec.*'",
     "prettier": "prettier --write '**'",
     "prettier-ci": "prettier --list-different '**' || (echo '\n\nThis failure means you did not run `yarn prettier-dev` before committing\n\n' && exit 1)",
     "prettier-dev": "pretty-quick --branch master",
