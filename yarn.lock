@@ -2260,7 +2260,12 @@ find-up@^5.0.0:
     locate-path "^6.0.0"
     path-exists "^4.0.0"
 
-first-chunk-stream@3.0.0, first-chunk-stream@^3.0.0:
+first-chunk-stream@4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/first-chunk-stream/-/first-chunk-stream-4.0.0.tgz#798e0b91a019a9421246ec4e4d25885c5d97912c"
+  integrity sha512-8TOz/mJp7+zc2HN63vnJHotwceq4gQI1+/gdJVnJcG4dEB96oUxw7wV9We4QKjSFWUc/V0ADDfaGba5cDoG6EA==
+
+first-chunk-stream@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/first-chunk-stream/-/first-chunk-stream-3.0.0.tgz#06972a66263505ed82b2c4db93c1b5e078a6576a"
   integrity sha512-LNRvR4hr/S8cXXkIY5pTgVP7L3tq6LlYWcg9nWBuW7o1NMxKZo6oOVa/6GIekMGI0Iw7uC+HWimMe9u/VAeKqw==
