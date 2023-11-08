@@ -887,9 +887,9 @@
   integrity sha512-EEhsLsD6UsDM1yFhAvy0Cjr6VwmpMWqFBCb9w07wVugF7w9nfajxLuVmngTIpgS6svCnm6Vaw+MZhoDCKnOfsw==
 
 "@types/safe-compare@^1.1.0":
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/@types/safe-compare/-/safe-compare-1.1.1.tgz#c3f14d64ff644c43dd873678aefbd569207138bb"
-  integrity sha512-CHAKKfRMpz/Sgi6HSekrStfiStBBnpw55d+6qt2u1xxGnSmT5npnJzADTEPfGfHkzZAOtnoZjvc/rNbF33+6lg==
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@types/safe-compare/-/safe-compare-1.1.2.tgz#80f16caaea8a669769c2b8b971d0d4b3a0fd4731"
+  integrity sha512-kK/IM1+pvwCMom+Kezt/UlP8LMEwm8rP6UgGbRc6zUnhU/csoBQ5rWgmD2CJuHxiMiX+H1VqPGpo0kDluJGXYA==
 
 "@types/semver@^7.3.12", "@types/semver@^7.5.0":
   version "7.5.1"
