@@ -2389,7 +2389,14 @@ find-up@^5.0.0:
     locate-path "^6.0.0"
     path-exists "^4.0.0"
 
-first-chunk-stream@3.0.0, first-chunk-stream@^3.0.0:
+first-chunk-stream@6.0.0:
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/first-chunk-stream/-/first-chunk-stream-6.0.0.tgz#e27cb13ac76ea974bfbf1e80a162ce5f83e8fcfd"
+  integrity sha512-8Mw/j+usWmvKvAk2szboyX4GzsWRUe6em5PT4csJi3TIR7e+SMGb7gtsc3Vv/JeAEVW1VDosAV4llpMXpoROrA==
+  dependencies:
+    uint8array-extras "^0.5.0"
+
+first-chunk-stream@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/first-chunk-stream/-/first-chunk-stream-3.0.0.tgz#06972a66263505ed82b2c4db93c1b5e078a6576a"
   integrity sha512-LNRvR4hr/S8cXXkIY5pTgVP7L3tq6LlYWcg9nWBuW7o1NMxKZo6oOVa/6GIekMGI0Iw7uC+HWimMe9u/VAeKqw==
@@ -4651,6 +4658,11 @@ typescript@^5.0.2:
   version "5.2.2"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.2.2.tgz#5ebb5e5a5b75f085f22bc3f8460fba308310fa78"
   integrity sha512-mI4WrpHsbCIcwT9cF4FZvr80QUeKvsUsUvKDoR+X/7XHQH98xYD8YHZg7ANtz2GtZt/CBq2QJ0thkGJMHfqc1w==
+
+uint8array-extras@^0.5.0:
+  version "0.5.1"
+  resolved "https://registry.yarnpkg.com/uint8array-extras/-/uint8array-extras-0.5.1.tgz#cf78cc896c177f90f59525ef09da7670ae13032a"
+  integrity sha512-dlgj8+9+Rak3JzT1Rg77nIccp0a5kBKjQ7tworiwKxkXIhqgdd+oZLkK8rcDb+Fq5tq+oUVjPbq4V/dMD6cnlA==
 
 unbox-primitive@^1.0.2:
   version "1.0.2"
