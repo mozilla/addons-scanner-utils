@@ -5054,10 +5054,10 @@ yargs@^17.3.1:
     y18n "^5.0.5"
     yargs-parser "^21.1.1"
 
-yauzl@3.1.0:
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/yauzl/-/yauzl-3.1.0.tgz#6ebf3c3bb11372dd45e458e78aa5571a9a422223"
-  integrity sha512-zbff6SaAPyewVextulqeBjJm+1ZhS69vSN7cRpqVD7jMNSE9oXEdQ1SGF+ydfB+gKE2a3GiWfXf/pnwVZ1/tOA==
+yauzl@3.1.1:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/yauzl/-/yauzl-3.1.1.tgz#d85503cc34933c0bcb3646ee2b97afedbebe32e7"
+  integrity sha512-MPxA7oN5cvGV0wzfkeHKF2/+Q4TkMpHSWGRy/96I4Cozljmx0ph91+Muxh6HegEtDC4GftJ8qYDE51vghFiEYA==
   dependencies:
     buffer-crc32 "~0.2.3"
     pend "~1.2.0"
