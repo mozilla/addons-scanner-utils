@@ -126,9 +126,8 @@ describe(__filename, () => {
       const myDirectory = createDirectory();
       await myDirectory.getFiles();
 
-      const readStreamEncodingDefault = await myDirectory.getFileAsStream(
-        'dir2/dir3/file.png',
-      );
+      const readStreamEncodingDefault =
+        await myDirectory.getFileAsStream('dir2/dir3/file.png');
 
       const readStreamEncodingNull = await myDirectory.getFileAsStream(
         'dir2/dir3/file.png',
