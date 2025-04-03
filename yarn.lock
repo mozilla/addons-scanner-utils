@@ -2200,9 +2200,9 @@ eslint-module-utils@^2.12.0:
     debug "^3.2.7"
 
 eslint-plugin-amo@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-amo/-/eslint-plugin-amo-2.0.0.tgz#19edc1b291757bc82d91c67bb0033b83fbc8062a"
-  integrity sha512-ebTr2s/aSwrpzbMTMbdP1Uv/3V1VFu3XLDO4DyTqTRYDODR4HKulwqKYsYwM6WgYpeSNu3Fu/OIMHDfP4AHJlQ==
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-amo/-/eslint-plugin-amo-2.1.0.tgz#c6e0dfd5506e0e6b4dc4df810368bb401b5e1442"
+  integrity sha512-vf5HO++BlYjFFv7M8exrrgTe/ii1OqkSXt7wvxQFK1NZqAv0aYtGXtvt2lIMJwO/AFzMn8o8spjXt95jGn2RZw==
   dependencies:
     requireindex "1.2.0"
     string-natural-compare "3.0.1"
