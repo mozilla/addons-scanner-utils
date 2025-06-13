@@ -59,7 +59,7 @@
     "pretty-quick": "4.2.2",
     "rimraf": "^5.0.0",
     "safe-compare": "1.1.4",
-    "sinon": "^20.0.0",
+    "sinon": "^21.0.0",
     "supertest": "^7.0.0",
     "ts-jest": "^29.0.0",
     "type-coverage": "^2.3.0",
