@@ -2,6 +2,7 @@
 *.*
 # exclude these files
 *.js
+/codecov
 # exclude these directories
 /bin/
 /coverage/
