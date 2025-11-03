@@ -3,7 +3,7 @@ import { Readable } from 'stream';
 import { EventEmitter } from 'events';
 
 import yauzl, { Entry, ZipFile } from 'yauzl';
-import realSinon, { SinonSandbox, SinonStub } from 'sinon';
+import { SinonSandbox, SinonStub, createSandbox } from 'sinon';
 
 import { DuplicateZipEntryError, InvalidZipFileError } from '../errors';
 import { Xpi, Files } from './xpi';
@@ -76,7 +76,7 @@ describe(__filename, () => {
   let sinon: SinonSandbox;
 
   beforeAll(() => {
-    sinon = realSinon.createSandbox();
+    sinon = createSandbox();
   });
 
   beforeEach(() => {

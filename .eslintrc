@@ -1,13 +1,10 @@
 {
   "extends": [
-    "amo",
+    "amo/base",
     "plugin:amo/typescript",
     "plugin:@typescript-eslint/recommended",
     "prettier"
   ],
-  "env": {
-    "node": true
-  },
   "rules": {
     "import/no-extraneous-dependencies": ["error", {
         "devDependencies": [
@@ -22,7 +19,7 @@
     // This rule conflicts with our convention.
     "jest/valid-describe": "off",
     // This is not needed for this project.
-    "amo/only-tsx-files": off,
+    "amo/only-tsx-files": "off",
     // We decided to prefer types over interfaces.
     "@typescript-eslint/prefer-interface": "off",
     // Report an error when a variable is not used.
@@ -33,7 +30,7 @@
     "@typescript-eslint/no-explicit-any": "error",
     "@typescript-eslint/explicit-member-accessibility": "off",
     "import/no-unresolved": ["error", {
-      ignore: ['estree'],
+      ignore: ["estree"],
     }],
     // This rule is annoying and does not add any value.
     "@typescript-eslint/camelcase": "off",
@@ -43,6 +40,9 @@
   },
   "settings": {
     "import/resolver": {
+      "typescript": {
+        "alwaysTryTypes": true,
+      },
       "node": {
         "extensions": [".js", ".ts"]
       }
