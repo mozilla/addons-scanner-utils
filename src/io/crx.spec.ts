@@ -1,7 +1,7 @@
 import defaultFs from 'fs';
 
 import yauzl, { Entry, ZipFile } from 'yauzl';
-import realSinon, { SinonSandbox, SinonStub } from 'sinon';
+import { SinonSandbox, SinonStub, createSandbox } from 'sinon';
 
 import { defaultParseCRX, Crx } from './crx';
 import { Files } from './xpi';
@@ -52,7 +52,7 @@ describe(__filename, () => {
   let sinon: SinonSandbox;
 
   beforeAll(() => {
-    sinon = realSinon.createSandbox();
+    sinon = createSandbox();
   });
 
   beforeEach(() => {

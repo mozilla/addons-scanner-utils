@@ -92,7 +92,7 @@ export class IOBase {
     return files;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/ban-types
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-unsafe-function-type
   async getFiles(optionalArgument?: Function): Promise<Files> {
     throw new Error('getFiles is not implemented');
   }
