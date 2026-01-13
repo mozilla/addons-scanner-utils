@@ -4562,14 +4562,7 @@ mimic-fn@^2.1.0:
   resolved "https://registry.npmjs.org/mimic-fn/-/mimic-fn-2.1.0.tgz"
   integrity sha512-OqbOk5oEQeAZ8WXWydlu9HJjz9WVdEIvamMCcXmuqUYjTknH/sqsWvhQ3vgwKFRR1HpjvNBKQ37nbJgYzGqGcg==
 
-"minimatch@6 || 7 || 8 || 9":
-  version "9.0.3"
-  resolved "https://registry.npmjs.org/minimatch/-/minimatch-9.0.3.tgz"
-  integrity sha512-RHiac9mvaRw0x3AYRgDC1CxAP7HTcNrrECeA8YYJeWnpo+2Q5CegtZjaotWTWxDG3UeGA1coE05iH1mPjT/2mg==
-  dependencies:
-    brace-expansion "^2.0.1"
-
-minimatch@^10.1.1:
+"minimatch@6 || 7 || 8 || 9 || 10", minimatch@^10.1.1:
   version "10.1.1"
   resolved "https://registry.yarnpkg.com/minimatch/-/minimatch-10.1.1.tgz#e6e61b9b0c1dcab116b5a7d1458e8b6ae9e73a55"
   integrity sha512-enIvLvRAFZYXJzkCYG5RKmPfrFArdLv+R+lbQ53BmIMLIry74bjKzX6iHAm8WYamJkhSSEabrWN5D97XnKObjQ==
@@ -5808,25 +5801,25 @@ type-check@^0.4.0, type-check@~0.4.0:
   dependencies:
     prelude-ls "^1.2.1"
 
-type-coverage-core@^2.29.1:
-  version "2.29.1"
-  resolved "https://registry.npmjs.org/type-coverage-core/-/type-coverage-core-2.29.1.tgz"
-  integrity sha512-lonikLRWnejbW9qsjoUsqXxQ3c4D0LPHaY2fsN5YD78sHAL27AaIoWYOjtitSqmv5UCS+3tv4qYjnj56vUH5eQ==
+type-coverage-core@^2.29.7:
+  version "2.29.7"
+  resolved "https://registry.yarnpkg.com/type-coverage-core/-/type-coverage-core-2.29.7.tgz#dbc50f88e7eaf4fab6ca6fbf1811a3612cfdf451"
+  integrity sha512-bt+bnXekw3p5NnqiZpNupOOxfUKGw2Z/YJedfGHkxpeyGLK7DZ59a6Wds8eq1oKjJc5Wulp2xL207z8FjFO14Q==
   dependencies:
     fast-glob "3"
-    minimatch "6 || 7 || 8 || 9"
+    minimatch "6 || 7 || 8 || 9 || 10"
     normalize-path "3"
     tslib "1 || 2"
     tsutils "3"
 
 type-coverage@^2.3.0:
-  version "2.29.1"
-  resolved "https://registry.npmjs.org/type-coverage/-/type-coverage-2.29.1.tgz"
-  integrity sha512-hsS1UYDrSltiSqMHJQn5wRFJiAeSA1PItMgeszxBkBjZEbtCzzmAU9dQswR1k8z0/ewj2/SbYEldYRurxgmxhA==
+  version "2.29.7"
+  resolved "https://registry.yarnpkg.com/type-coverage/-/type-coverage-2.29.7.tgz#bbeeda5d9933e180a5f5e47b1f589b1b2c95825c"
+  integrity sha512-E67Chw7SxFe++uotisxt/xzB1UxxvLztzzQqVyUZ/jKujsejVqvoO5vn25oMvqJydqYrASBVBCQCy082E2qQYQ==
   dependencies:
     chalk "4.1.2"
     minimist "1"
-    type-coverage-core "^2.29.1"
+    type-coverage-core "^2.29.7"
 
 type-detect@4.0.8:
   version "4.0.8"
