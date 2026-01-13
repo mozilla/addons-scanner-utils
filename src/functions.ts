@@ -48,7 +48,6 @@ export type FunctionConfig = {
   _process?: typeof process;
   _unlinkFile?: typeof fs.promises.unlink;
   apiKeyEnvVarName?: string;
-  requiredApiKeyParam?: string;
   requiredDownloadUrlParam?: string;
   tmpDir?: string;
   xpiFilename?: string;
@@ -61,7 +60,6 @@ export const createExpressApp =
     _process = process,
     _unlinkFile = fs.promises.unlink,
     apiKeyEnvVarName = 'LAMBDA_API_KEY',
-    requiredApiKeyParam = 'api_key',
     requiredDownloadUrlParam = 'download_url',
     tmpDir = os.tmpdir(),
     xpiFilename = 'input.xpi',
@@ -105,17 +103,20 @@ export const createExpressApp =
           return;
         }
 
-        if (typeof req.body[requiredApiKeyParam] === 'undefined') {
+        if (!req.get('authorization')) {
           next(
             createApiError({
-              message: `missing "${requiredApiKeyParam}" parameter`,
+              message: `missing authorization header`,
               status: 400,
             }),
           );
           return;
         }
 
-        if (!apiKey || !safeCompare(apiKey, req.body[requiredApiKeyParam])) {
+        if (
+          !apiKey ||
+          !safeCompare(`Bearer ${apiKey}`, String(req.get('authorization')))
+        ) {
           next(
             createApiError({
               message: 'authentication has failed',

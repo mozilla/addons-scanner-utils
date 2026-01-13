@@ -73,7 +73,6 @@ describe(__filename, () => {
       allowedOrigin = testAllowedOrigin,
       apiKey = 'valid api key',
       apiKeyEnvVarName = 'API_KEY',
-      requiredApiKeyParam,
       requiredDownloadUrlParam,
       xpiFilename,
     }: Partial<
@@ -90,7 +89,6 @@ describe(__filename, () => {
         _process,
         _unlinkFile,
         apiKeyEnvVarName,
-        requiredApiKeyParam,
         requiredDownloadUrlParam,
         tmpDir: TMP_DIR_FOR_TESTS,
         xpiFilename,
@@ -99,7 +97,7 @@ describe(__filename, () => {
       return (handler: express.Handler) => ({
         app: decorator(handler),
         sendApiKey: (app: request.Request) => {
-          return app.send({ api_key: apiKey });
+          return app.set('authorization', `Bearer ${apiKey}`).send({});
         },
       });
     };
@@ -112,18 +110,16 @@ describe(__filename, () => {
       await rm(TMP_DIR_FOR_TESTS, { recursive: true, force: true });
     });
 
-    it('returns a 400 when requiredApiKeyParam is missing', async () => {
-      const requiredApiKeyParam = 'key';
+    it('returns a 400 when authorization header is missing', async () => {
       const { app } = _createExpressApp({
         apiKey: 'api-key',
-        requiredApiKeyParam,
       })(okHandler);
 
       const response = await request(app).post('/').send({});
 
       expect(response.status).toEqual(400);
       expect(response.body).toMatchObject({
-        error: `missing "${requiredApiKeyParam}" parameter`,
+        error: `missing authorization header`,
       });
     });
 
@@ -143,7 +139,8 @@ describe(__filename, () => {
 
       const response = await request(app)
         .post('/')
-        .send({ api_key: 'valid api key' });
+        .set('authorization', 'Bearer ')
+        .send({});
 
       expect(response.status).toEqual(401);
       expect(response.body).toMatchObject({
@@ -156,7 +153,8 @@ describe(__filename, () => {
 
       const response = await request(app)
         .post('/')
-        .send({ api_key: 'invalid api key' });
+        .set('authorization', 'Bearer invalid api key')
+        .send({});
 
       expect(response.status).toEqual(401);
       expect(response.body).toMatchObject({
