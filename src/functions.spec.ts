@@ -8,7 +8,7 @@ import fetch, { Response } from 'node-fetch';
 
 import {
   FunctionConfig,
-  RequestWithFiles,
+  RequestWithExtraProps,
   createApiError,
   createExpressApp,
 } from './functions';
@@ -57,7 +57,7 @@ describe(__filename, () => {
       return { ...process, env } as typeof process;
     };
 
-    const okHandler = (req: RequestWithFiles, res: express.Response) => {
+    const okHandler = (req: RequestWithExtraProps, res: express.Response) => {
       return res.json({ ok: true, xpiFilepath: req.xpiFilepath });
     };
 
@@ -99,6 +99,13 @@ describe(__filename, () => {
         sendApiKey: (app: request.Request) => {
           return app.set('authorization', `Bearer ${apiKey}`).send({});
         },
+        sendWithAuthHeader: (
+          app: request.Request,
+          authorization: string,
+          body: object = {},
+        ) => {
+          return app.set('authorization', authorization).send(body);
+        },
       });
     };
 
@@ -128,13 +135,11 @@ describe(__filename, () => {
 
       const response = await sendApiKey(request(app).post('/'));
 
-      expect(response.status).toEqual(401);
-      expect(response.body).toMatchObject({
-        error: 'authentication has failed',
-      });
+      expect(response.status).toEqual(500);
+      expect(response.body).toMatchObject({ error: 'api key must be set' });
     });
 
-    it('returns a 401 when api key is missing in the env', async () => {
+    it('returns a 500 when api key is missing in the env', async () => {
       const { app } = _createExpressApp({ apiKey: '' })(okHandler);
 
       const response = await request(app)
@@ -142,10 +147,8 @@ describe(__filename, () => {
         .set('authorization', 'Bearer ')
         .send({});
 
-      expect(response.status).toEqual(401);
-      expect(response.body).toMatchObject({
-        error: 'authentication has failed',
-      });
+      expect(response.status).toEqual(500);
+      expect(response.body).toMatchObject({ error: 'api key must be set' });
     });
 
     it('returns a 401 when api key is invalid', async () => {
@@ -361,6 +364,68 @@ describe(__filename, () => {
       });
 
       expect(_console.error).toHaveBeenCalledWith(`_unlinkFile(): ${error}`);
+    });
+
+    it('rejects unsupport auth schemes', async () => {
+      const { app, sendWithAuthHeader } = _createExpressApp({
+        apiKey: 'api-key',
+      })(okHandler);
+
+      const body = { download_url: `${testAllowedOrigin}/some.xpi` };
+      const response = await sendWithAuthHeader(
+        request(app).post('/'),
+        `HMAC ccb46b24272fc0260997debe19928fc771ffae8bcc153c8ee9cf08d278ad72f3`,
+        body,
+      );
+
+      expect(response.status).toEqual(400);
+      expect(response.body).toMatchObject({
+        error: `unsupported authorization scheme`,
+      });
+    });
+
+    it('accepts the HMAC-SHA256 auth scheme', async () => {
+      const { app } = _createExpressApp({
+        apiKey: 'api-key',
+      })(okHandler);
+
+      const body = { download_url: `${testAllowedOrigin}/some.xpi` };
+      const response = await request(app)
+        .post('/')
+        .set('content-type', 'application/json')
+        .set(
+          'authorization',
+          // Generated with python by using the following snippet:
+          //
+          // hmac.new(
+          //   'api-key'.encode(),
+          //   '{\n    "download_url": "https://dont-use-this-subdomain.addons.mozilla.org/some.xpi"\n}'.encode(),
+          //   digestmod=hashlib.sha256
+          // ).hexdigest()
+          //
+          `HMAC-SHA256 ccb46b24272fc0260997debe19928fc771ffae8bcc153c8ee9cf08d278ad72f3`,
+        )
+        // We use this so that we force a formatted JSON with whitespaces and
+        // newlines. This makes sure we're using the raw body when computing
+        // the request's signature.
+        .send(JSON.stringify(body, null, 4));
+
+      expect(response.status).toEqual(200);
+    });
+
+    it('rejects invalid signatures', async () => {
+      const { app, sendWithAuthHeader } = _createExpressApp({
+        apiKey: 'api-key',
+      })(okHandler);
+
+      const body = { download_url: `${testAllowedOrigin}/some.xpi` };
+      const response = await sendWithAuthHeader(
+        request(app).post('/'),
+        `HMAC-SHA256 f6c49a0baaa2d7b14ddd899334ecaed17359c9c831f4e9123302a7c12fd2e138`,
+        body,
+      );
+
+      expect(response.status).toEqual(401);
     });
   });
 });
