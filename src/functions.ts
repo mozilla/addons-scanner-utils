@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -38,8 +39,9 @@ export const createApiError = ({
 };
 
 // The `createExpressApp` adds new attributes to the Express request.
-export type RequestWithFiles = Request & {
+export type RequestWithExtraProps = Request & {
   xpiFilepath?: string;
+  rawBody?: Buffer;
 };
 
 export type FunctionConfig = {
@@ -79,15 +81,29 @@ export const createExpressApp =
       delete _process.env[apiKeyEnvVarName];
     }
 
+    // This is the options we pass to the `json()` middleware.
+    const jsonOptions = {
+      // This is a hack to retain the raw body on the request object. We need
+      // this to verify the signature of the request.
+      verify(
+        req: RequestWithExtraProps,
+        res: Response,
+        buf: Buffer,
+        /* encoding: string, */
+      ) {
+        req.rawBody = buf;
+      },
+    };
+
     // Parse JSON body requests.
-    app.use(bodyParser.json());
+    app.use(bodyParser.json(jsonOptions));
 
     // This middleware handles the common logic needed to expose our tools. It
     // adds a new `xpiFilepath` attribute to the Express request or returns an
     // error that will be converted to an API error by the error handler
     // middleware declared at the bottom of the middleware chain.
     app.use(
-      async (req: RequestWithFiles, res: Response, next: NextFunction) => {
+      async (req: RequestWithExtraProps, res: Response, next: NextFunction) => {
         const allowedMethods = ['POST'];
 
         if (req.headers['content-type'] !== 'application/json') {
@@ -103,6 +119,16 @@ export const createExpressApp =
           return;
         }
 
+        if (!apiKey) {
+          next(
+            createApiError({
+              message: `api key must be set`,
+              status: 500,
+            }),
+          );
+          return;
+        }
+
         if (!req.get('authorization')) {
           next(
             createApiError({
@@ -113,14 +139,37 @@ export const createExpressApp =
           return;
         }
 
-        if (
-          !apiKey ||
-          !safeCompare(`Bearer ${apiKey}`, String(req.get('authorization')))
-        ) {
+        const authorization = String(req.get('authorization'));
+        if (authorization.startsWith('HMAC-SHA256 ') && req.rawBody) {
+          const digest = crypto
+            .createHmac('sha256', apiKey)
+            .update(req.rawBody)
+            .digest('hex');
+
+          if (!safeCompare(`HMAC-SHA256 ${digest}`, authorization)) {
+            next(
+              createApiError({
+                message: 'authentication has failed',
+                status: 401,
+              }),
+            );
+            return;
+          }
+        } else if (authorization.startsWith('Bearer ')) {
+          if (!safeCompare(`Bearer ${apiKey}`, authorization)) {
+            next(
+              createApiError({
+                message: 'authentication has failed',
+                status: 401,
+              }),
+            );
+            return;
+          }
+        } else {
           next(
             createApiError({
-              message: 'authentication has failed',
-              status: 401,
+              message: 'unsupported authorization scheme',
+              status: 400,
             }),
           );
           return;
