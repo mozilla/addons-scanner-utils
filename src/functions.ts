@@ -129,7 +129,10 @@ export const createExpressApp =
           return;
         }
 
-        if (!req.get('authorization')) {
+        const authorization =
+          req.get('X-Forwarded-Authorization') ?? req.get('Authorization');
+
+        if (!authorization) {
           next(
             createApiError({
               message: `missing authorization header`,
@@ -139,7 +142,6 @@ export const createExpressApp =
           return;
         }
 
-        const authorization = String(req.get('authorization'));
         if (authorization.startsWith('HMAC-SHA256 ') && req.rawBody) {
           const digest = crypto
             .createHmac('sha256', apiKey)
