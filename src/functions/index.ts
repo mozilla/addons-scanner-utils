@@ -9,28 +9,7 @@ import express, {
 import bodyParser from 'body-parser';
 import safeCompare from 'safe-compare';
 
-type ApiError = Error & {
-  extraInfo?: string;
-  status?: number;
-};
-
-type CreateApiErrorParams = {
-  message: string;
-  extraInfo?: string;
-  status?: number;
-};
-
-export const createApiError = ({
-  message,
-  extraInfo,
-  status = 500,
-}: CreateApiErrorParams): ApiError => {
-  const error: ApiError = new Error(message);
-  error.status = status;
-  error.extraInfo = extraInfo;
-
-  return error;
-};
+import { ApiError, createApiError } from './api';
 
 // The `createExpressApp` adds new attributes to the Express request.
 export type RequestWithExtraProps = Request & {
@@ -193,3 +172,6 @@ export const createExpressApp =
 
     return app;
   };
+
+export * from './api';
+export * from './download';
