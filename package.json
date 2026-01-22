@@ -10,7 +10,6 @@
   "author": "Mozilla Add-ons Team",
   "license": "MPL-2.0",
   "dependencies": {
-    "@types/yauzl": "2.10.3",
     "common-tags": "1.8.2",
     "first-chunk-stream": "3.0.0",
     "strip-bom-stream": "4.0.0",
@@ -46,6 +45,7 @@
     "@types/safe-compare": "^1.1.0",
     "@types/sinon": "^21.0.0",
     "@types/supertest": "^6.0.2",
+    "@types/yauzl": "2.10.3",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
     "body-parser": "2.2.2",
