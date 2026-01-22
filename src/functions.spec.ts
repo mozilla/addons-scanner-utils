@@ -413,6 +413,36 @@ describe(__filename, () => {
       expect(response.status).toEqual(200);
     });
 
+    it('supports the X-Forwarded-Authorization header', async () => {
+      const { app } = _createExpressApp({
+        apiKey: 'api-key',
+      })(okHandler);
+
+      const body = { download_url: `${testAllowedOrigin}/some.xpi` };
+      const response = await request(app)
+        .post('/')
+        .set('content-type', 'application/json')
+        .set('authorization', 'some-other-auth-value')
+        .set(
+          'X-Forwarded-Authorization',
+          // Generated with python by using the following snippet:
+          //
+          // hmac.new(
+          //   'api-key'.encode(),
+          //   '{\n    "download_url": "https://dont-use-this-subdomain.addons.mozilla.org/some.xpi"\n}'.encode(),
+          //   digestmod=hashlib.sha256
+          // ).hexdigest()
+          //
+          `HMAC-SHA256 ccb46b24272fc0260997debe19928fc771ffae8bcc153c8ee9cf08d278ad72f3`,
+        )
+        // We use this so that we force a formatted JSON with whitespaces and
+        // newlines. This makes sure we're using the raw body when computing
+        // the request's signature.
+        .send(JSON.stringify(body, null, 4));
+
+      expect(response.status).toEqual(200);
+    });
+
     it('rejects invalid signatures', async () => {
       const { app, sendWithAuthHeader } = _createExpressApp({
         apiKey: 'api-key',
