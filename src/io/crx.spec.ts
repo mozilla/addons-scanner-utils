@@ -1,7 +1,6 @@
 import defaultFs from 'fs';
 
 import yauzl, { Entry, ZipFile } from 'yauzl';
-import { SinonSandbox, SinonStub, createSandbox } from 'sinon';
 
 import { defaultParseCRX, Crx } from './crx';
 import { Files } from './xpi';
@@ -45,29 +44,18 @@ describe(__filename, () => {
   let fakeZipFile: ZipFile;
   let fakeZipLib: typeof yauzl;
   let fakeFs: typeof defaultFs;
-  let parseCRXStub: SinonStub;
-  let openStub: SinonStub;
-  let fromBufferStub: SinonStub;
-  let readFileStub: SinonStub;
-  let sinon: SinonSandbox;
-
-  beforeAll(() => {
-    sinon = createSandbox();
-  });
+  let parseCRXStub: jest.Mock;
+  let openStub: jest.Mock;
+  let fromBufferStub: jest.Mock;
+  let readFileStub: jest.Mock;
 
   beforeEach(() => {
-    // This test file comes from addons-linter and it has been ported to
-    // TypeScript. That being said, the whole test suite setup is weird with
-    // lots of partial mocks. TS does not like that, but it was there and it
-    // works...
-    // TODO: rewrite this test file with better mocks.
-
     fakeZipFile = createFakeZipFile();
 
-    parseCRXStub = sinon.stub();
+    parseCRXStub = jest.fn();
 
-    openStub = sinon.stub();
-    fromBufferStub = sinon.stub();
+    openStub = jest.fn();
+    fromBufferStub = jest.fn();
 
     fakeZipLib = {
       ...yauzl,
@@ -75,7 +63,7 @@ describe(__filename, () => {
       fromBuffer: fromBufferStub,
     };
 
-    readFileStub = sinon.stub();
+    readFileStub = jest.fn();
 
     fakeFs = {
       ...defaultFs,
@@ -83,10 +71,6 @@ describe(__filename, () => {
       // does not really matter.
       readFile: readFileStub,
     };
-  });
-
-  afterEach(() => {
-    sinon.restore();
   });
 
   const createCrx = ({
@@ -103,7 +87,7 @@ describe(__filename, () => {
     async function verifyCrxFixture(zipfile: ZipFile) {
       const results: Array<{ name: string; size: number }> = [];
 
-      zipfile.on('entry', (entry) => {
+      zipfile.on('entry', (entry: Entry) => {
         results.push({
           name: entry.fileName,
           size: entry.uncompressedSize,
@@ -169,9 +153,15 @@ describe(__filename, () => {
       const notCrx = createCrx({ fs: fakeFs });
       // CRX4 format does not exist yet. Reject files with such a header.
       // This is "Cr24" followed by the bytes 4 0 0 0.
-      readFileStub.yieldsAsync(
-        null,
-        Buffer.from([67, 114, 50, 52, 4, 0, 0, 0]),
+      readFileStub.mockImplementation(
+        (
+          path: string,
+          callback: (err: Error | null, data?: Buffer) => void,
+        ) => {
+          setImmediate(() =>
+            callback(null, Buffer.from([67, 114, 50, 52, 4, 0, 0, 0])),
+          );
+        },
       );
 
       await expect(notCrx.open()).rejects.toThrow(
@@ -181,14 +171,23 @@ describe(__filename, () => {
   });
 
   describe('getFiles()', () => {
-    let endStub: SinonStub;
-    let entryStub: SinonStub;
+    let endStub: jest.Mock;
+    let entryStub: jest.Mock;
 
     beforeEach(() => {
-      const onStub = sinon.stub();
-      // Can only yield data to the callback once.
-      endStub = onStub.withArgs('end');
-      entryStub = onStub.withArgs('entry');
+      endStub = jest.fn();
+      entryStub = jest.fn();
+
+      const onStub = jest.fn(
+        (event: string, callback: (...args: unknown[]) => void) => {
+          if (event === 'end') {
+            endStub(callback);
+          } else if (event === 'entry') {
+            entryStub(callback);
+          }
+          return fakeZipFile;
+        },
+      );
 
       fakeZipFile = createFakeZipFile();
       fakeZipFile.on = onStub;
@@ -212,7 +211,7 @@ describe(__filename, () => {
       const files = await myCrx.getFiles();
 
       expect(files).toEqual(myCrx.files);
-      expect(fromBufferStub.called).toBeFalsy();
+      expect(fromBufferStub).not.toHaveBeenCalled();
     });
 
     it('should contain expected files', async () => {
@@ -221,24 +220,40 @@ describe(__filename, () => {
         'chrome.manifest': chromeManifestEntry,
       };
 
-      readFileStub.yieldsAsync(null, Buffer.from('bar'));
-      parseCRXStub.returns(Buffer.from('foo'));
+      readFileStub.mockImplementation(
+        (
+          path: string,
+          callback: (err: Error | null, data?: Buffer) => void,
+        ) => {
+          setImmediate(() => callback(null, Buffer.from('bar')));
+        },
+      );
+      parseCRXStub.mockReturnValue(Buffer.from('foo'));
       // Return the fake zip to the open callback.
-      fromBufferStub.yieldsAsync(null, fakeZipFile);
+      fromBufferStub.mockImplementation(
+        (
+          buffer: Buffer,
+          callback: (err: Error | null, zipfile?: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(null, fakeZipFile));
+        },
+      );
 
-      // If we could use yields multiple times here we would but sinon doesn't
-      // support it when the stub is only invoked once (e.g. to init the event
-      // handler).
+      // If we could yield multiple times here we would but we need to manually
+      // trigger callbacks since the stub is only invoked once (e.g. to init
+      // the event handler).
       const onEventsSubscribed = () => {
         // Directly call the 'entry' event callback as if we are actually
         // processing entries in a zip.
-        const entryCallback = entryStub.firstCall.args[1];
+        const entryCallback = entryStub.mock.calls[0][0];
         entryCallback.call(null, chromeManifestEntry);
         entryCallback.call(null, chromeContentDir);
       };
 
-      // Call the close event callback
-      endStub.yieldsAsync();
+      // Call the close event callback.
+      endStub.mockImplementation((callback: () => void) => {
+        setImmediate(callback);
+      });
 
       const files = await myCrx.getFiles(onEventsSubscribed);
 
@@ -248,7 +263,14 @@ describe(__filename, () => {
     it('should reject on errors in readFile() in open()', async () => {
       const myCrx = createCrx({ fs: fakeFs });
 
-      readFileStub.yieldsAsync(new Error('open test'), undefined);
+      readFileStub.mockImplementation(
+        (
+          path: string,
+          callback: (err: Error | null, data?: Buffer) => void,
+        ) => {
+          setImmediate(() => callback(new Error('open test'), undefined));
+        },
+      );
 
       await expect(myCrx.getFiles()).rejects.toThrow('open test');
     });
@@ -256,8 +278,17 @@ describe(__filename, () => {
     it('should reject on errors in parseCRX() in open()', async () => {
       const myCrx = createCrx({ parseCRX: parseCRXStub, fs: fakeFs });
 
-      readFileStub.yieldsAsync(null, Buffer.from('bar'));
-      parseCRXStub.throws(new Error('open test'));
+      readFileStub.mockImplementation(
+        (
+          path: string,
+          callback: (err: Error | null, data?: Buffer) => void,
+        ) => {
+          setImmediate(() => callback(null, Buffer.from('bar')));
+        },
+      );
+      parseCRXStub.mockImplementation(() => {
+        throw new Error('open test');
+      });
 
       await expect(myCrx.getFiles()).rejects.toThrow('open test');
     });
@@ -265,9 +296,23 @@ describe(__filename, () => {
     it('should reject on errors in fromBuffer() in open()', async () => {
       const myCrx = createCrx({ parseCRX: parseCRXStub, fs: fakeFs });
 
-      readFileStub.yieldsAsync(null, Buffer.from('bar'));
-      parseCRXStub.returns(Buffer.from('foo'));
-      fromBufferStub.yieldsAsync(new Error('open test'), fakeZipFile);
+      readFileStub.mockImplementation(
+        (
+          path: string,
+          callback: (err: Error | null, data?: Buffer) => void,
+        ) => {
+          setImmediate(() => callback(null, Buffer.from('bar')));
+        },
+      );
+      parseCRXStub.mockReturnValue(Buffer.from('foo'));
+      fromBufferStub.mockImplementation(
+        (
+          buffer: Buffer,
+          callback: (err: Error | null, zipfile?: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(new Error('open test'), fakeZipFile));
+        },
+      );
 
       await expect(myCrx.getFiles()).rejects.toThrow('open test');
     });
