@@ -3,7 +3,6 @@ import { Readable } from 'stream';
 import { EventEmitter } from 'events';
 
 import yauzl, { Entry, ZipFile } from 'yauzl';
-import { SinonSandbox, SinonStub, createSandbox } from 'sinon';
 
 import { DuplicateZipEntryError, InvalidZipFileError } from '../errors';
 import { Xpi, Files } from './xpi';
@@ -71,23 +70,12 @@ describe(__filename, () => {
 
   let fakeZipFile: ZipFile;
   let fakeZipLib: typeof yauzl;
-  let openReadStreamStub: SinonStub;
-  let openStub: SinonStub;
-  let sinon: SinonSandbox;
-
-  beforeAll(() => {
-    sinon = createSandbox();
-  });
+  let openReadStreamStub: jest.Mock;
+  let openStub: jest.Mock;
 
   beforeEach(() => {
-    // This test file comes from addons-linter and it has been ported to
-    // TypeScript. That being said, the whole test suite setup is weird with
-    // lots of partial mocks. TS does not like that, but it was there and it
-    // works...
-    // TODO: rewrite this test file with better mocks.
-
-    openReadStreamStub = sinon.stub();
-    openStub = sinon.stub();
+    openReadStreamStub = jest.fn();
+    openStub = jest.fn();
 
     fakeZipFile = createFakeZipFile();
     fakeZipFile.openReadStream = openReadStreamStub;
@@ -96,10 +84,6 @@ describe(__filename, () => {
       ...yauzl,
       open: openStub,
     };
-  });
-
-  afterEach(() => {
-    sinon.restore();
   });
 
   const createXpi = ({
@@ -115,7 +99,15 @@ describe(__filename, () => {
     it('should resolve with zipfile', async () => {
       const myXpi = createXpi();
       // Return the fake zip to the open callback.
-      openStub.yieldsAsync(null, fakeZipFile);
+      openStub.mockImplementation(
+        (
+          path: string,
+          options: yauzl.Options,
+          callback: (err: Error | null, zipfile: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(null, fakeZipFile));
+        },
+      );
 
       const zipfile = await myXpi.open();
       expect(zipfile).toEqual(fakeZipFile);
@@ -124,7 +116,15 @@ describe(__filename, () => {
     it('should reject on error', async () => {
       const myXpi = createXpi();
       // Return the fake zip to the open callback.
-      openStub.yieldsAsync(new Error('open() test error'));
+      openStub.mockImplementation(
+        (
+          path: string,
+          options: yauzl.Options,
+          callback: (err: Error | null, zipfile?: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(new Error('open() test error')));
+        },
+      );
 
       await expect(myXpi.open()).rejects.toThrow('open() test');
     });
@@ -134,17 +134,19 @@ describe(__filename, () => {
       openZipFile.isOpen = true;
       const myXpi = createXpi({ autoClose: false });
       // Return the fake zip to the open callback.
-      openStub.yieldsAsync(null, openZipFile);
+      openStub.mockImplementation((path, options, callback) => {
+        setImmediate(() => callback(null, openZipFile));
+      });
 
       let zip = await myXpi.open();
 
-      expect(openStub.called).toEqual(true);
+      expect(openStub).toHaveBeenCalled();
       expect(zip).toEqual(openZipFile);
 
-      openStub.resetHistory();
+      openStub.mockClear();
       zip = await myXpi.open();
 
-      expect(openStub.called).toEqual(false);
+      expect(openStub).not.toHaveBeenCalled();
       expect(zip).toEqual(openZipFile);
     });
 
@@ -153,17 +155,19 @@ describe(__filename, () => {
       closedZipFile.isOpen = false;
       const myXpi = createXpi({ autoClose: false });
       // Return the fake zip to the open callback.
-      openStub.yieldsAsync(null, closedZipFile);
+      openStub.mockImplementation((path, options, callback) => {
+        setImmediate(() => callback(null, closedZipFile));
+      });
 
       let zip = await myXpi.open();
 
-      expect(openStub.called).toEqual(true);
+      expect(openStub).toHaveBeenCalled();
       expect(zip).toEqual(closedZipFile);
 
-      openStub.resetHistory();
+      openStub.mockClear();
       zip = await myXpi.open();
 
-      expect(openStub.called).toEqual(true);
+      expect(openStub).toHaveBeenCalled();
       expect(zip).toEqual(closedZipFile);
     });
 
@@ -172,32 +176,45 @@ describe(__filename, () => {
       openZipFile.isOpen = true;
       const myXpi = createXpi({ autoClose: true });
       // Return the fake zip to the open callback.
-      openStub.yieldsAsync(null, openZipFile);
+      openStub.mockImplementation((path, options, callback) => {
+        setImmediate(() => callback(null, openZipFile));
+      });
 
       let zip = await myXpi.open();
 
-      expect(openStub.called).toEqual(true);
+      expect(openStub).toHaveBeenCalled();
       expect(zip).toEqual(openZipFile);
 
-      openStub.resetHistory();
+      openStub.mockClear();
       zip = await myXpi.open();
 
-      expect(openStub.called).toEqual(true);
+      expect(openStub).toHaveBeenCalled();
       expect(zip).toEqual(openZipFile);
     });
   });
 
   describe('getFiles()', () => {
-    let closeStub: SinonStub;
-    let endStub: SinonStub;
-    let entryStub: SinonStub;
+    let closeStub: jest.Mock;
+    let endStub: jest.Mock;
+    let entryStub: jest.Mock;
 
     beforeEach(() => {
-      const onStub = sinon.stub();
-      // Can only yield data to the callback once.
-      closeStub = onStub.withArgs('close');
-      endStub = onStub.withArgs('end');
-      entryStub = onStub.withArgs('entry');
+      closeStub = jest.fn();
+      endStub = jest.fn();
+      entryStub = jest.fn();
+
+      const onStub = jest.fn(
+        (event: string, callback: (...args: unknown[]) => void) => {
+          if (event === 'close') {
+            closeStub(callback);
+          } else if (event === 'end') {
+            endStub(callback);
+          } else if (event === 'entry') {
+            entryStub(callback);
+          }
+          return fakeZipFile;
+        },
+      );
 
       fakeZipFile = createFakeZipFile();
       fakeZipFile.on = onStub;
@@ -220,7 +237,7 @@ describe(__filename, () => {
       });
 
       await expect(myXpi.getFiles()).resolves.toEqual(myXpi.files);
-      expect(openStub.called).toBeFalsy();
+      expect(openStub).not.toHaveBeenCalled();
     });
 
     it('should return cached data even if the ZIP file is empty', async () => {
@@ -228,7 +245,7 @@ describe(__filename, () => {
       myXpi._overrideCachedFilesForTests({});
 
       await expect(myXpi.getFiles()).resolves.toEqual(myXpi.files);
-      expect(openStub.called).toBeFalsy();
+      expect(openStub).not.toHaveBeenCalled();
     });
 
     it('should contain expected files', async () => {
@@ -239,23 +256,32 @@ describe(__filename, () => {
       };
 
       // Return the fake zip to the open callback.
-      openStub.yieldsAsync(null, fakeZipFile);
+      openStub.mockImplementation(
+        (
+          path: string,
+          options: yauzl.Options,
+          callback: (err: Error | null, zipfile: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(null, fakeZipFile));
+        },
+      );
 
-      // If we could use yields multiple times here we would
-      // but sinon doesn't support it when the stub is only
-      // invoked once (e.g. to init the event handler).
+      // If we could yield multiple times here we would, but we need to
+      // manually trigger callbacks since the stub is only invoked once
+      // (e.g. to init the event handler).
       const onEventsSubscribed = () => {
-        // Directly call the 'entry' event callback as if
-        // we are actually processing entries in a
-        // zip.
-        const entryCallback = entryStub.firstCall.args[1];
+        // Directly call the 'entry' event callback as if we are actually
+        // processing entries in a zip.
+        const entryCallback = entryStub.mock.calls[0][0];
         entryCallback.call(null, chromeManifestEntry);
         entryCallback.call(null, chromeContentDir);
         entryCallback.call(null, installFileEntry);
       };
 
       // Call the end event callback
-      endStub.yieldsAsync();
+      endStub.mockImplementation((callback: () => void) => {
+        setImmediate(callback);
+      });
 
       await expect(myXpi.getFiles(onEventsSubscribed)).resolves.toEqual(
         expected,
@@ -266,20 +292,29 @@ describe(__filename, () => {
       const myXpi = createXpi();
 
       // Return the fake zip to the open callback.
-      openStub.yieldsAsync(null, fakeZipFile);
+      openStub.mockImplementation(
+        (
+          path: string,
+          options: yauzl.Options,
+          callback: (err: Error | null, zipfile: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(null, fakeZipFile));
+        },
+      );
 
       const onEventsSubscribed = () => {
-        // Directly call the 'entry' event callback as if
-        // we are actually processing entries in a
-        // zip.
-        const entryCallback = entryStub.firstCall.args[1];
+        // Directly call the 'entry' event callback as if we are actually
+        // processing entries in a zip.
+        const entryCallback = entryStub.mock.calls[0][0];
         entryCallback.call(null, chromeManifestEntry);
         entryCallback.call(null, chromeContentDir);
         entryCallback.call(null, installFileEntry);
       };
 
-      // Call the end event callback
-      endStub.yieldsAsync();
+      // Call the end event callback.
+      endStub.mockImplementation((callback: () => void) => {
+        setImmediate(callback);
+      });
 
       myXpi.setScanFileCallback((filePath) => {
         return !/manifest\.json/.test(filePath);
@@ -292,17 +327,27 @@ describe(__filename, () => {
 
     it('can be configured to exclude files when cached', async () => {
       const myXpi = createXpi();
-      // Populate the file cache:
+      // Populate the file cache.
       myXpi._overrideCachedFilesForTests({
         'manifest.json': installFileEntry,
         'chrome.manifest': chromeManifestEntry,
       });
 
       // Return the fake zip to the open callback.
-      openStub.yieldsAsync(null, fakeZipFile);
+      openStub.mockImplementation(
+        (
+          path: string,
+          options: yauzl.Options,
+          callback: (err: Error | null, zipfile: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(null, fakeZipFile));
+        },
+      );
 
-      // Call the close event callback
-      closeStub.yieldsAsync();
+      // Call the close event callback.
+      closeStub.mockImplementation((callback: () => void) => {
+        setImmediate(callback);
+      });
 
       myXpi.setScanFileCallback((filePath) => {
         return !/manifest\.json/.test(filePath);
@@ -315,10 +360,18 @@ describe(__filename, () => {
 
     it('should reject on duplicate entries', async () => {
       const myXpi = createXpi();
-      openStub.yieldsAsync(null, fakeZipFile);
+      openStub.mockImplementation(
+        (
+          path: string,
+          options: yauzl.Options,
+          callback: (err: Error | null, zipfile: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(null, fakeZipFile));
+        },
+      );
 
       const onEventsSubscribed = () => {
-        const entryCallback = entryStub.firstCall.args[1];
+        const entryCallback = entryStub.mock.calls[0][0];
         entryCallback.call(null, installFileEntry);
         entryCallback.call(null, dupeInstallFileEntry);
       };
@@ -333,7 +386,15 @@ describe(__filename, () => {
     it('should reject on errors in open()', async () => {
       const myXpi = createXpi();
 
-      openStub.yieldsAsync(new Error('open test'), fakeZipFile);
+      openStub.mockImplementation(
+        (
+          path: string,
+          options: yauzl.Options,
+          callback: (err: Error | null, zipfile?: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(new Error('open test'), fakeZipFile));
+        },
+      );
 
       await expect(myXpi.getFiles()).rejects.toThrow('open test');
     });
@@ -456,9 +517,24 @@ describe(__filename, () => {
         'manifest.json': installFileEntry,
       });
 
-      openStub.yieldsAsync(null, fakeZipFile);
-      openReadStreamStub.yieldsAsync(
-        new Error('getChunkAsBuffer openReadStream test'),
+      openStub.mockImplementation(
+        (
+          path: string,
+          options: yauzl.Options,
+          callback: (err: Error | null, zipfile: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(null, fakeZipFile));
+        },
+      );
+      openReadStreamStub.mockImplementation(
+        (
+          entry: Entry,
+          callback: (err: Error | null, stream?: Readable) => void,
+        ) => {
+          setImmediate(() =>
+            callback(new Error('getChunkAsBuffer openReadStream test')),
+          );
+        },
       );
 
       const chunkLength = 123;
@@ -473,15 +549,30 @@ describe(__filename, () => {
         'manifest.json': installFileEntry,
       });
 
-      openStub.yieldsAsync(null, fakeZipFile);
+      openStub.mockImplementation(
+        (
+          path: string,
+          options: yauzl.Options,
+          callback: (err: Error | null, zipfile: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(null, fakeZipFile));
+        },
+      );
 
       const rstream = new Readable();
       rstream.push('123\n');
       rstream.push(null);
 
-      openReadStreamStub.yields(null, rstream);
+      openReadStreamStub.mockImplementation(
+        (
+          entry: Entry,
+          callback: (err: Error | null, stream?: Readable) => void,
+        ) => {
+          callback(null, rstream);
+        },
+      );
 
-      // Just grab the first two characters.
+      // Grab the first two characters.
       const buffer = await myXpi.getChunkAsBuffer('manifest.json', 2);
       // The file contains: 123\n. This tests that we are getting just
       // the first two characters in the buffer.
@@ -497,9 +588,24 @@ describe(__filename, () => {
         'chrome.manifest': chromeManifestEntry,
       });
 
-      openStub.yieldsAsync(null, fakeZipFile);
-      openReadStreamStub.yieldsAsync(
-        new Error('getFileAsStream openReadStream test'),
+      openStub.mockImplementation(
+        (
+          path: string,
+          options: yauzl.Options,
+          callback: (err: Error | null, zipfile: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(null, fakeZipFile));
+        },
+      );
+      openReadStreamStub.mockImplementation(
+        (
+          entry: Entry,
+          callback: (err: Error | null, stream?: Readable) => void,
+        ) => {
+          setImmediate(() =>
+            callback(new Error('getFileAsStream openReadStream test')),
+          );
+        },
       );
 
       await expect(myXpi.getFileAsStream('manifest.json')).rejects.toThrow(
@@ -514,14 +620,29 @@ describe(__filename, () => {
         'chrome.manifest': chromeManifestEntry,
       });
 
-      openStub.yieldsAsync(null, fakeZipFile);
+      openStub.mockImplementation(
+        (
+          path: string,
+          options: yauzl.Options,
+          callback: (err: Error | null, zipfile: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(null, fakeZipFile));
+        },
+      );
 
       const rstream = new Readable();
       rstream.push('line one\n');
       rstream.push('line two');
       rstream.push(null);
 
-      openReadStreamStub.yields(null, rstream);
+      openReadStreamStub.mockImplementation(
+        (
+          entry: Entry,
+          callback: (err: Error | null, stream?: Readable) => void,
+        ) => {
+          callback(null, rstream);
+        },
+      );
 
       const readStream = await myXpi.getFileAsStream('manifest.json');
 
@@ -539,14 +660,29 @@ describe(__filename, () => {
         'chrome.manifest': chromeManifestEntry,
       });
 
-      openStub.yieldsAsync(null, fakeZipFile);
+      openStub.mockImplementation(
+        (
+          path: string,
+          options: yauzl.Options,
+          callback: (err: Error | null, zipfile: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(null, fakeZipFile));
+        },
+      );
 
       const rstream = new Readable();
       rstream.push('line one\n');
       rstream.push('line two');
       rstream.push(null);
 
-      openReadStreamStub.yields(null, rstream);
+      openReadStreamStub.mockImplementation(
+        (
+          entry: Entry,
+          callback: (err: Error | null, stream?: Readable) => void,
+        ) => {
+          callback(null, rstream);
+        },
+      );
 
       await expect(myXpi.getFileAsString('manifest.json')).resolves.toBe(
         'line one\nline two',
@@ -560,10 +696,25 @@ describe(__filename, () => {
         'chrome.manifest': chromeManifestEntry,
       });
 
-      openStub.yieldsAsync(null, fakeZipFile);
+      openStub.mockImplementation(
+        (
+          path: string,
+          options: yauzl.Options,
+          callback: (err: Error | null, zipfile: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(null, fakeZipFile));
+        },
+      );
 
       const rstream = fs.createReadStream('src/tests/fixtures/io/dir3/foo.txt');
-      openReadStreamStub.yields(null, rstream);
+      openReadStreamStub.mockImplementation(
+        (
+          entry: Entry,
+          callback: (err: Error | null, stream?: Readable) => void,
+        ) => {
+          callback(null, rstream);
+        },
+      );
 
       const string = await myXpi.getFileAsString('manifest.json');
       expect(string.charCodeAt(0) === 0xfeff).toBeFalsy();
@@ -576,9 +727,22 @@ describe(__filename, () => {
         'chrome.manifest': chromeManifestEntry,
       });
 
-      openStub.yieldsAsync(null, fakeZipFile);
-      openReadStreamStub.yields(
-        new Error('getFileAsString openReadStream test'),
+      openStub.mockImplementation(
+        (
+          path: string,
+          options: yauzl.Options,
+          callback: (err: Error | null, zipfile: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(null, fakeZipFile));
+        },
+      );
+      openReadStreamStub.mockImplementation(
+        (
+          entry: Entry,
+          callback: (err: Error | null, stream?: Readable) => void,
+        ) => {
+          callback(new Error('getFileAsString openReadStream test'));
+        },
       );
 
       await expect(myXpi.getFileAsString('manifest.json')).rejects.toThrow(
