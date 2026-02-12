@@ -1,10 +1,5 @@
-import path from 'path';
-import os from 'os';
-import { rm, mkdir } from 'node:fs/promises';
-
 import express from 'express';
 import request from 'supertest';
-import fetch, { Response } from 'node-fetch';
 
 import {
   FunctionConfig,
@@ -12,8 +7,6 @@ import {
   createApiError,
   createExpressApp,
 } from './functions';
-
-jest.mock('node-fetch');
 
 describe(__filename, () => {
   describe('createApiError', () => {
@@ -48,8 +41,6 @@ describe(__filename, () => {
   });
 
   describe('createExpressApp', () => {
-    const TMP_DIR_FOR_TESTS = path.join(os.tmpdir(), 'addons-scanner-utils');
-
     const testAllowedOrigin =
       'https://dont-use-this-subdomain.addons.mozilla.org';
 
@@ -58,40 +49,22 @@ describe(__filename, () => {
     };
 
     const okHandler = (req: RequestWithExtraProps, res: express.Response) => {
-      return res.json({ ok: true, xpiFilepath: req.xpiFilepath });
+      return res.json({ ok: true });
     };
-
-    const fakeFetch = jest.mocked(fetch).mockReturnValue(
-      // body should be an Iterable so let's fake it here, too.
-      Promise.resolve({ ok: true, body: [] } as unknown as Response),
-    );
 
     const _createExpressApp = ({
       _console,
-      _fetch = fakeFetch,
-      _unlinkFile = jest.fn().mockReturnValue(Promise.resolve()),
-      allowedOrigin = testAllowedOrigin,
       apiKey = 'valid api key',
       apiKeyEnvVarName = 'API_KEY',
-      requiredDownloadUrlParam,
-      xpiFilename,
     }: Partial<
       FunctionConfig & { apiKey: string; allowedOrigin: string }
     > = {}) => {
-      const _process = createProcessWithEnv({
-        [apiKeyEnvVarName]: apiKey,
-        ALLOWED_ORIGIN: allowedOrigin,
-      });
+      const _process = createProcessWithEnv({ [apiKeyEnvVarName]: apiKey });
 
       const decorator = createExpressApp({
         _console,
-        _fetch,
         _process,
-        _unlinkFile,
         apiKeyEnvVarName,
-        requiredDownloadUrlParam,
-        tmpDir: TMP_DIR_FOR_TESTS,
-        xpiFilename,
       });
 
       return (handler: express.Handler) => ({
@@ -108,14 +81,6 @@ describe(__filename, () => {
         },
       });
     };
-
-    beforeEach(async () => {
-      await mkdir(TMP_DIR_FOR_TESTS);
-    });
-
-    afterEach(async () => {
-      await rm(TMP_DIR_FOR_TESTS, { recursive: true, force: true });
-    });
 
     it('returns a 400 when authorization header is missing', async () => {
       const { app } = _createExpressApp({
@@ -187,114 +152,6 @@ describe(__filename, () => {
       });
     });
 
-    it('returns a 400 when requiredDownloadUrlParam is missing', async () => {
-      const requiredDownloadUrlParam = 'file';
-      const { app, sendApiKey } = _createExpressApp({
-        requiredDownloadUrlParam,
-      })(okHandler);
-
-      const response = await sendApiKey(request(app).post('/'));
-
-      expect(response.status).toEqual(400);
-      expect(response.body).toMatchObject({
-        error: `missing "${requiredDownloadUrlParam}" parameter`,
-      });
-    });
-
-    it('returns null when ALLOWED_ORIGIN is misconfigured', async () => {
-      expect(() => {
-        _createExpressApp({ allowedOrigin: '' })(okHandler);
-      }).toThrow(/ALLOWED_ORIGIN is not set/);
-    });
-
-    it('rejects invalid origins', async () => {
-      const downloadURL = `https://not-a-valid-origin.example.org/an-addon.xpi`;
-      const { app, sendApiKey } = _createExpressApp()(okHandler);
-
-      const response = await sendApiKey(request(app).post('/')).send({
-        download_url: downloadURL,
-      });
-
-      expect(response.status).toEqual(400);
-      expect(response.body).toMatchObject({
-        error: 'invalid origin',
-      });
-    });
-
-    it('downloads the file pointed by the download_url parameter', async () => {
-      const _fetch = fakeFetch;
-      const downloadURL = `${testAllowedOrigin}/an-addon.xpi`;
-      const xpiFilename = 'filename-for-uploaded.xpi';
-      const { app, sendApiKey } = _createExpressApp({
-        _fetch,
-        allowedOrigin: testAllowedOrigin,
-        xpiFilename,
-      })(okHandler);
-
-      const response = await sendApiKey(request(app).post('/')).send({
-        download_url: downloadURL,
-      });
-
-      expect(response.status).toEqual(200);
-      expect(response.body).toEqual({
-        ok: true,
-        xpiFilepath: path.join(TMP_DIR_FOR_TESTS, xpiFilename),
-      });
-
-      expect(_fetch).toHaveBeenCalledWith(downloadURL);
-    });
-
-    it('returns a 500 when the fetch call returns an error', async () => {
-      const error = 'download has failed';
-      const _fetch = jest.mocked(fetch).mockImplementationOnce(() => {
-        throw new Error(error);
-      });
-      const { app, sendApiKey } = _createExpressApp({ _fetch })(okHandler);
-
-      const response = await sendApiKey(request(app).post('/')).send({
-        download_url: `${testAllowedOrigin}/some.xpi`,
-      });
-
-      expect(response.status).toEqual(500);
-      expect(response.body).toMatchObject({
-        error: 'failed to download file',
-        extra_info: expect.stringMatching(error),
-      });
-    });
-
-    it('returns a 500 when downloading the file has failed', async () => {
-      const error = 'unexpected response Errôôôôrr';
-      const _fetch = jest.mocked(fetch).mockResolvedValueOnce({
-        ok: false,
-        body: [],
-        statusText: 'Errôôôôrr',
-      } as unknown as Response);
-      const { app, sendApiKey } = _createExpressApp({ _fetch })(okHandler);
-
-      const response = await sendApiKey(request(app).post('/')).send({
-        download_url: `${testAllowedOrigin}/some.xpi`,
-      });
-
-      expect(response.status).toEqual(500);
-      expect(response.body).toMatchObject({
-        error: 'failed to download file',
-        extra_info: expect.stringMatching(error),
-      });
-    });
-
-    it('returns a 404 when endpoint called is invalid', async () => {
-      const { app, sendApiKey } = _createExpressApp()(okHandler);
-
-      const response = await sendApiKey(request(app).post('/invalid')).send({
-        download_url: `${testAllowedOrigin}/some.xpi`,
-      });
-
-      expect(response.status).toEqual(404);
-      expect(response.body).toMatchObject({
-        error: 'not found',
-      });
-    });
-
     it('returns a 500 when handler throws an error and logs the error', async () => {
       const _console = {
         ...console,
@@ -305,9 +162,7 @@ describe(__filename, () => {
         throw new Error(error);
       });
 
-      const response = await sendApiKey(request(app).post('/')).send({
-        download_url: `${testAllowedOrigin}/some.xpi`,
-      });
+      const response = await sendApiKey(request(app).post('/'));
 
       expect(response.status).toEqual(500);
       expect(response.body).toMatchObject({ error });
@@ -320,7 +175,6 @@ describe(__filename, () => {
       const apiKey = 'valid api key';
       const _process = createProcessWithEnv({
         [apiKeyEnvVarName]: apiKey,
-        ALLOWED_ORIGIN: testAllowedOrigin,
       });
 
       expect(_process.env).toHaveProperty(apiKeyEnvVarName, apiKey);
@@ -328,42 +182,6 @@ describe(__filename, () => {
       createExpressApp({ _process, apiKeyEnvVarName })(okHandler);
 
       expect(_process.env).not.toHaveProperty(apiKeyEnvVarName);
-    });
-
-    it('deletes the downloaded xpi once the response is sent', async () => {
-      const _unlinkFile = jest.fn().mockReturnValue(Promise.resolve());
-      const xpiFilename = 'filename-for-uploaded.xpi';
-      const { app, sendApiKey } = _createExpressApp({
-        _unlinkFile,
-        xpiFilename,
-      })(okHandler);
-
-      await sendApiKey(request(app).post('/')).send({
-        download_url: `${testAllowedOrigin}/some.xpi`,
-      });
-
-      expect(_unlinkFile).toHaveBeenCalledWith(
-        path.join(TMP_DIR_FOR_TESTS, xpiFilename),
-      );
-    });
-
-    it('logs an error when deleting the downloaded xpi has failed', async () => {
-      const _console = {
-        ...console,
-        error: jest.fn(),
-      };
-      const error = new Error('some fs error');
-      const _unlinkFile = jest.fn().mockRejectedValue(error);
-      const { app, sendApiKey } = _createExpressApp({
-        _console,
-        _unlinkFile,
-      })(okHandler);
-
-      await sendApiKey(request(app).post('/')).send({
-        download_url: `${testAllowedOrigin}/some.xpi`,
-      });
-
-      expect(_console.error).toHaveBeenCalledWith(`_unlinkFile(): ${error}`);
     });
 
     it('rejects unsupport auth schemes', async () => {

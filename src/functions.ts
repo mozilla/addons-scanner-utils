@@ -1,9 +1,4 @@
 import crypto from 'node:crypto';
-import fs from 'fs';
-import os from 'os';
-import path from 'path';
-import stream from 'stream';
-import util from 'util';
 
 import express, {
   NextFunction,
@@ -12,7 +7,6 @@ import express, {
   Response,
 } from 'express';
 import bodyParser from 'body-parser';
-import fetch from 'node-fetch';
 import safeCompare from 'safe-compare';
 
 type ApiError = Error & {
@@ -40,39 +34,23 @@ export const createApiError = ({
 
 // The `createExpressApp` adds new attributes to the Express request.
 export type RequestWithExtraProps = Request & {
-  xpiFilepath?: string;
   rawBody?: Buffer;
 };
 
 export type FunctionConfig = {
   _console?: typeof console;
-  _fetch?: typeof fetch;
   _process?: typeof process;
-  _unlinkFile?: typeof fs.promises.unlink;
   apiKeyEnvVarName?: string;
-  requiredDownloadUrlParam?: string;
-  tmpDir?: string;
-  xpiFilename?: string;
 };
 
 export const createExpressApp =
   ({
     _console = console,
-    _fetch = fetch,
     _process = process,
-    _unlinkFile = fs.promises.unlink,
     apiKeyEnvVarName = 'LAMBDA_API_KEY',
-    requiredDownloadUrlParam = 'download_url',
-    tmpDir = os.tmpdir(),
-    xpiFilename = 'input.xpi',
   }: FunctionConfig = {}) =>
   (handler: RequestHandler) => {
     const app = express();
-
-    const allowedOrigin = _process.env.ALLOWED_ORIGIN || null;
-    if (!allowedOrigin) {
-      throw new Error('ALLOWED_ORIGIN is not set or unexpectedly empty!');
-    }
 
     const apiKey = _process.env[apiKeyEnvVarName] || null;
     if (apiKey) {
@@ -98,12 +76,10 @@ export const createExpressApp =
     // Parse JSON body requests.
     app.use(bodyParser.json(jsonOptions));
 
-    // This middleware handles the common logic needed to expose our tools. It
-    // adds a new `xpiFilepath` attribute to the Express request or returns an
-    // error that will be converted to an API error by the error handler
-    // middleware declared at the bottom of the middleware chain.
+    // Authentication middleware plus some extra checks.
     app.use(
       async (req: RequestWithExtraProps, res: Response, next: NextFunction) => {
+        // We only allow POST because the `handler` is passed to `app.post()`.
         const allowedMethods = ['POST'];
 
         if (req.headers['content-type'] !== 'application/json') {
@@ -186,60 +162,11 @@ export const createExpressApp =
           return;
         }
 
-        const downloadURL = req.body[requiredDownloadUrlParam];
-
-        if (!downloadURL) {
-          next(
-            createApiError({
-              message: `missing "${requiredDownloadUrlParam}" parameter`,
-              status: 400,
-            }),
-          );
-          return;
-        }
-
-        if (!downloadURL.startsWith(allowedOrigin)) {
-          next(createApiError({ message: 'invalid origin', status: 400 }));
-          return;
-        }
-
-        try {
-          const xpiFilepath = path.join(tmpDir, xpiFilename);
-          const streamPipeline = util.promisify(stream.pipeline);
-          const response = await _fetch(downloadURL);
-          if (!response.ok) {
-            throw new Error(`unexpected response ${response.statusText}`);
-          }
-          await streamPipeline(
-            response.body,
-            fs.createWriteStream(xpiFilepath),
-          );
-
-          req.xpiFilepath = xpiFilepath;
-
-          // Add a listener that will run code after the response is sent.
-          res.on('finish', () => {
-            _unlinkFile(xpiFilepath).catch((error) => {
-              _console.error(`_unlinkFile(): ${error}`);
-            });
-          });
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (err: any) {
-          next(
-            createApiError({
-              message: 'failed to download file',
-              extraInfo: err.message,
-            }),
-          );
-          return;
-        }
-
         next();
       },
     );
 
-    // We register the handler for the tool that will be exposed. This handler is
-    // guaranteed to have a valid `xpiFilepath` stored on disk.
+    // We register the handler for the tool that will be exposed.
     app.post('/', handler);
 
     // NotFound handler.
