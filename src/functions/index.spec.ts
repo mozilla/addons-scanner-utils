@@ -6,7 +6,7 @@ import {
   RequestWithExtraProps,
   createApiError,
   createExpressApp,
-} from './functions';
+} from '.';
 
 describe(__filename, () => {
   describe('createApiError', () => {
