@@ -9,6 +9,12 @@ import { createApiError } from './api';
 
 export const DEFAULT_DOWNLOAD_FILENAME = 'input.xpi';
 
+/**
+ * Error thrown when file download operations fail.
+ *
+ * @property status - HTTP status code
+ * @property extraInfo - Additional error details
+ */
 export class DownloadFileError extends Error {
   status: number;
 
@@ -22,6 +28,9 @@ export class DownloadFileError extends Error {
     this.extraInfo = extraInfo;
   }
 
+  /**
+   * Convert this error to ApiError format.
+   */
   toApiError() {
     return createApiError({
       message: this.message,
@@ -31,6 +40,14 @@ export class DownloadFileError extends Error {
   }
 }
 
+/**
+ * Parameters for downloading a file upload.
+ *
+ * @property downloadURL - URL to download from
+ * @property allowedOrigin - Allowed origin for the download URL
+ * @property tmpDir - Temporary directory for download (default: os.tmpdir())
+ * @property filename - Downloaded file name (default: 'input.xpi')
+ */
 export type DownloadFileUploadParams = {
   downloadURL: string;
   allowedOrigin: string;
@@ -38,6 +55,12 @@ export type DownloadFileUploadParams = {
   filename?: string;
 };
 
+/**
+ * Download a file from a URL to a temporary location.
+ *
+ * @returns Promise resolving to the file path of the downloaded file
+ * @throws DownloadFileError if the download fails or URL origin doesn't match
+ */
 export const downloadFileUpload = async ({
   downloadURL,
   allowedOrigin,
