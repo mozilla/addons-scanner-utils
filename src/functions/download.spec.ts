@@ -6,6 +6,7 @@ import { Readable } from 'node:stream';
 import {
   DEFAULT_DOWNLOAD_FILENAME,
   DownloadFileError,
+  downloadFile,
   downloadFileUpload,
 } from './download';
 
@@ -55,6 +56,99 @@ describe(__filename, () => {
       const apiError = error.toApiError();
 
       expect(apiError.status).toEqual(500);
+    });
+  });
+
+  describe('downloadFile', () => {
+    const issKey = 'test-iss-key';
+    const secret = 'test-secret';
+    const env = { AMO_JWT_ISS_KEY: issKey, AMO_JWT_SECRET: secret };
+    const downloadURL = 'https://addons.mozilla.org/file.xpi';
+
+    let tmpDir: string;
+
+    beforeEach(() => {
+      tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'download-test-'));
+    });
+
+    afterEach(() => {
+      if (fs.existsSync(tmpDir)) {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+      }
+    });
+
+    it('downloads a file with a JWT Authorization header', async () => {
+      const fileContent = 'test xpi content';
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        body: Readable.toWeb(Readable.from([Buffer.from(fileContent)])),
+        status: 200,
+        statusText: 'OK',
+      });
+
+      const filepath = await downloadFile({ downloadURL, tmpDir, env });
+
+      expect(filepath).toEqual(path.join(tmpDir, DEFAULT_DOWNLOAD_FILENAME));
+      expect(fs.existsSync(filepath)).toBe(true);
+      expect(fs.readFileSync(filepath, 'utf-8')).toEqual(fileContent);
+
+      const [calledURL, calledOptions] = (global.fetch as jest.Mock).mock
+        .calls[0];
+      expect(calledURL).toEqual(downloadURL);
+      expect(calledOptions.headers.Authorization).toMatch(/^JWT /);
+    });
+
+    it('can use a custom filename', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        body: Readable.toWeb(Readable.from([Buffer.from('content')])),
+        status: 200,
+        statusText: 'OK',
+      });
+
+      const filepath = await downloadFile({
+        downloadURL,
+        tmpDir,
+        filename: 'custom.xpi',
+        env,
+      });
+
+      expect(filepath).toEqual(path.join(tmpDir, 'custom.xpi'));
+      expect(fs.existsSync(filepath)).toBe(true);
+    });
+
+    it('throws DownloadFileError when fetch fails', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        body: null,
+        status: 404,
+        statusText: 'Not Found',
+      });
+
+      await expect(
+        downloadFile({ downloadURL, tmpDir, env }),
+      ).rejects.toMatchObject({
+        message: 'unexpected response: Not Found',
+        status: 500,
+      });
+    });
+
+    it('throws DownloadFileError when network error occurs', async () => {
+      global.fetch = jest.fn().mockRejectedValue(new Error('network timeout'));
+
+      await expect(
+        downloadFile({ downloadURL, tmpDir, env }),
+      ).rejects.toMatchObject({
+        message: 'failed to download file',
+        extraInfo: 'network timeout',
+        status: 500,
+      });
+    });
+
+    it('throws when env vars are missing', async () => {
+      await expect(
+        downloadFile({ downloadURL, tmpDir, env: {} }),
+      ).rejects.toThrow('AMO_JWT_ISS_KEY environment variable is not set');
     });
   });
 
@@ -111,7 +205,9 @@ describe(__filename, () => {
 
       const downloadedContent = fs.readFileSync(filepath, 'utf-8');
       expect(downloadedContent).toEqual(fileContent);
-      expect(global.fetch).toHaveBeenCalledWith(validURL);
+      expect(global.fetch).toHaveBeenCalledWith(validURL, {
+        headers: undefined,
+      });
     });
 
     it('can use a custom filename', async () => {

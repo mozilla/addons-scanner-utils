@@ -6,6 +6,7 @@ import { pipeline } from 'node:stream/promises';
 import type { ReadableStream } from 'node:stream/web';
 
 import { createApiError } from './api';
+import { makeJWT, MakeJWTConfig } from './auth';
 
 export const DEFAULT_DOWNLOAD_FILENAME = 'input.xpi';
 
@@ -39,6 +40,71 @@ export class DownloadFileError extends Error {
     });
   }
 }
+
+const fetchToFile = async (
+  downloadURL: string,
+  tmpDir: string,
+  filename: string,
+  headers?: HeadersInit,
+): Promise<string> => {
+  try {
+    const response = await fetch(downloadURL, { headers });
+
+    if (!response.ok || !response.body) {
+      throw new DownloadFileError(
+        `unexpected response: ${response.statusText}`,
+      );
+    }
+
+    const filepath = path.join(tmpDir, filename);
+    await pipeline(
+      Readable.fromWeb(response.body as ReadableStream<Uint8Array>),
+      createWriteStream(filepath),
+    );
+
+    return filepath;
+  } catch (err: unknown) {
+    if (err instanceof DownloadFileError) {
+      throw err;
+    }
+
+    const message = err instanceof Error ? err.message : String(err);
+    throw new DownloadFileError('failed to download file', message);
+  }
+};
+
+/**
+ * Parameters for downloading a file from the AMO API with JWT authentication.
+ *
+ * @property downloadURL - URL to download from
+ * @property tmpDir - Temporary directory for download (default: os.tmpdir())
+ * @property filename - Downloaded file name (default: 'input.xpi')
+ */
+export type DownloadFileParams = MakeJWTConfig & {
+  downloadURL: string;
+  tmpDir?: string;
+  filename?: string;
+};
+
+/**
+ * Download a file from the AMO API, authenticating with a JWT token computed
+ * from the `AMO_JWT_ISS_KEY` and `AMO_JWT_SECRET` environment variables.
+ *
+ * @returns Promise resolving to the file path of the downloaded file
+ * @throws DownloadFileError if the download fails
+ */
+export const downloadFile = async ({
+  downloadURL,
+  tmpDir = os.tmpdir(),
+  filename = DEFAULT_DOWNLOAD_FILENAME,
+  env,
+}: DownloadFileParams): Promise<string> => {
+  const token = makeJWT({ env });
+
+  return fetchToFile(downloadURL, tmpDir, filename, {
+    Authorization: `JWT ${token}`,
+  });
+};
 
 /**
  * Parameters for downloading a file upload.
@@ -75,27 +141,5 @@ export const downloadFileUpload = async ({
     );
   }
 
-  try {
-    const response = await fetch(downloadURL);
-    if (!response.ok || !response.body) {
-      throw new DownloadFileError(
-        `unexpected response: ${response.statusText}`,
-      );
-    }
-
-    const filepath = path.join(tmpDir, filename);
-    await pipeline(
-      Readable.fromWeb(response.body as ReadableStream<Uint8Array>),
-      createWriteStream(filepath),
-    );
-
-    return filepath;
-  } catch (err: unknown) {
-    if (err instanceof DownloadFileError) {
-      throw err;
-    }
-
-    const message = err instanceof Error ? err.message : String(err);
-    throw new DownloadFileError('failed to download file', message);
-  }
+  return fetchToFile(downloadURL, tmpDir, filename);
 };

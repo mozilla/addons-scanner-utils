@@ -5,10 +5,10 @@ const JWT_EXPIRY_SECONDS = 60;
 /**
  * Configuration for makeJWT.
  *
- * @property _process - Process object for environment variables
+ * @property env - Environment variables object (default: process.env)
  */
 export type MakeJWTConfig = {
-  _process?: typeof process;
+  env?: NodeJS.ProcessEnv;
 };
 
 /**
@@ -18,9 +18,9 @@ export type MakeJWTConfig = {
  * @returns A signed HS256 JWT string
  * @throws Error if the required environment variables are not set
  */
-export const makeJWT = ({ _process = process }: MakeJWTConfig = {}): string => {
-  const issKey = _process.env.AMO_JWT_ISS_KEY;
-  const secret = _process.env.AMO_JWT_SECRET;
+export const makeJWT = ({ env = process.env }: MakeJWTConfig = {}): string => {
+  const issKey = env.AMO_JWT_ISS_KEY;
+  const secret = env.AMO_JWT_SECRET;
 
   if (!issKey) {
     throw new Error('AMO_JWT_ISS_KEY environment variable is not set');
