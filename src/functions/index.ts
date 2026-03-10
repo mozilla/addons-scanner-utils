@@ -211,4 +211,5 @@ export const createExpressApp =
   };
 
 export * from './api';
+export * from './auth';
 export * from './download';
