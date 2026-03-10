@@ -21,35 +21,34 @@ references:
 
   restore_build_cache: &restore_build_cache
     restore_cache:
-      name: restore yarn package cache
+      name: restore npm package cache
       keys:
-        - yarn-packages-{{ checksum "yarn.lock" }}
+        - npm-packages-{{ checksum "package-lock.json" }}
 
-  run_yarn_install: &run_yarn_install
+  run_npm_install: &run_npm_install
     run:
       name: install dependencies
-      # See: https://github.com/mozilla/addons-frontend/issues/3034
-      command: yarn install --pure-lockfile
+      command: npm ci
 
   save_build_cache: &save_build_cache
     save_cache:
-      name: save yarn package cache
-      key: yarn-packages-{{ checksum "yarn.lock" }}
+      name: save npm package cache
+      key: npm-packages-{{ checksum "package-lock.json" }}
       paths:
-        - ~/.cache/yarn
+        - ./node_modules
 
   restore_next_build_cache: &restore_next_build_cache
     restore_cache:
-      name: restore yarn package cache
+      name: restore npm package cache
       keys:
-        - next-yarn-packages-{{ checksum "yarn.lock" }}
+        - next-npm-packages-{{ checksum "package-lock.json" }}
 
   save_next_build_cache: &save_next_build_cache
     save_cache:
-      name: save yarn package cache
-      key: next-yarn-packages-{{ checksum "yarn.lock" }}
+      name: save npm package cache
+      key: next-npm-packages-{{ checksum "package-lock.json" }}
       paths:
-        - ~/.cache/yarn
+        - ./node_modules
 
 jobs:
   test:
@@ -57,23 +56,23 @@ jobs:
     steps:
       - checkout
       - *restore_build_cache
-      - *run_yarn_install
+      - *run_npm_install
       - *save_build_cache
       - run:
           name: unit tests
-          command: yarn test-ci
+          command: npm run test-ci
       - codecov/upload
       # Make sure we can build a production package.
       - run:
-          name: yarn pack
+          name: npm pack
           command: |
-            yarn pack
+            npm pack
             # The `prepack` script is supposed to remove spec files.
             test ! -f dist/functions.spec.ts
-      - run: yarn typecheck
-      - run: yarn type-coverage
-      - run: yarn prettier-ci
-      - run: yarn lint
+      - run: npm run typecheck
+      - run: npm run type-coverage
+      - run: npm run prettier-ci
+      - run: npm run lint
       # Set up a workspace to share data between this job and the `release-tag`
       # one when we want to publish a new npm version.
       - persist_to_workspace:
@@ -87,9 +86,9 @@ jobs:
     steps:
       - checkout
       - *restore_next_build_cache
-      - *run_yarn_install
+      - *run_npm_install
       - *save_next_build_cache
-      - run: yarn test-ci
+      - run: npm run test-ci
 
   release-tag:
     <<: *defaults
