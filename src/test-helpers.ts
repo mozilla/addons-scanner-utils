@@ -26,7 +26,6 @@ export const readStringFromStream = (
     let content = '';
     readStream.on('readable', () => {
       let chunk;
-      // eslint-disable-next-line no-cond-assign
       while ((chunk = readStream.read()) !== null) {
         content += chunk.toString(encoding);
       }

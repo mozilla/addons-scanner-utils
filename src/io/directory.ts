@@ -87,7 +87,6 @@ export class Directory extends IOBase {
       let content = '';
       readStream.on('readable', () => {
         let chunk: string;
-        // eslint-disable-next-line no-cond-assign
         while ((chunk = readStream.read()) !== null) {
           content += chunk.toString();
         }
