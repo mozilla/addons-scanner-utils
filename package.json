@@ -45,8 +45,8 @@
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
     "body-parser": "2.2.2",
-    "eslint": "^8.1.0",
-    "eslint-config-amo": "^6.1.0",
+    "eslint": "^9.0.0",
+    "eslint-config-amo": "^8.0.0",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-amo": "^3.0.0",
     "express": "5.2.1",
@@ -61,7 +61,7 @@
     "typescript": "^5.9.3"
   },
   "scripts": {
-    "eslint": "eslint --ext ts --ext js src/",
+    "eslint": "eslint src/",
     "lint": "npm run eslint",
     "prepack": "rimraf dist/ && tsc --outDir dist/ && rimraf -g 'dist/**/*.spec.*' 'dist/*.spec.*'",
     "prettier": "prettier --write '**'",
