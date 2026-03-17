@@ -38,3 +38,14 @@ export const createAppError = ({
 
   return error;
 };
+
+/**
+ * Error object used when interactions with the AMO API led to errors.
+ */
+export class AMOError extends Error {
+  constructor(message: string) {
+    super(message);
+
+    this.name = 'AMOError';
+  }
+}
