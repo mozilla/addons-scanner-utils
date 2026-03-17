@@ -210,6 +210,7 @@ export const createExpressApp =
     return app;
   };
 
+export * from './api';
 export * from './auth';
 export * from './download';
 export * from './error';
