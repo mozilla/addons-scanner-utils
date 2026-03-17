@@ -9,7 +9,7 @@ import express, {
 import bodyParser from 'body-parser';
 import safeCompare from 'safe-compare';
 
-import { ApiError, createApiError } from './error';
+import { AppError, createAppError } from './error';
 
 /**
  * Extended Express request type with additional properties added by the
@@ -103,7 +103,7 @@ export const createExpressApp =
           // to the next middleware, which will be the error handler.
           // See: https://expressjs.com/en/guide/error-handling.html
           next(
-            createApiError({
+            createAppError({
               message: 'unsupported content type',
               status: 415,
             }),
@@ -113,7 +113,7 @@ export const createExpressApp =
 
         if (!apiKey) {
           next(
-            createApiError({
+            createAppError({
               message: `api key must be set`,
               status: 500,
             }),
@@ -126,7 +126,7 @@ export const createExpressApp =
 
         if (!authorization) {
           next(
-            createApiError({
+            createAppError({
               message: `missing authorization header`,
               status: 400,
             }),
@@ -142,7 +142,7 @@ export const createExpressApp =
 
           if (!safeCompare(`HMAC-SHA256 ${digest}`, authorization)) {
             next(
-              createApiError({
+              createAppError({
                 message: 'authentication has failed',
                 status: 401,
               }),
@@ -152,7 +152,7 @@ export const createExpressApp =
         } else if (authorization.startsWith('Bearer ')) {
           if (!safeCompare(`Bearer ${apiKey}`, authorization)) {
             next(
-              createApiError({
+              createAppError({
                 message: 'authentication has failed',
                 status: 401,
               }),
@@ -161,7 +161,7 @@ export const createExpressApp =
           }
         } else {
           next(
-            createApiError({
+            createAppError({
               message: 'unsupported authorization scheme',
               status: 400,
             }),
@@ -174,7 +174,7 @@ export const createExpressApp =
             .map((method) => method.toLowerCase())
             .includes(req.method.toLowerCase())
         ) {
-          next(createApiError({ message: 'method not allowed', status: 405 }));
+          next(createAppError({ message: 'method not allowed', status: 405 }));
           return;
         }
 
@@ -187,14 +187,14 @@ export const createExpressApp =
 
     // NotFound handler.
     app.use((req: Request, res: Response, next: NextFunction) => {
-      next(createApiError({ message: 'not found', status: 404 }));
+      next(createAppError({ message: 'not found', status: 404 }));
     });
 
     // Error handler. Even though we are not using `next`, it must be kept
     // because the Express error handler signature requires 4 arguments.
     app.use(
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      (err: ApiError, req: Request, res: Response, next: NextFunction) => {
+      (err: AppError, req: Request, res: Response, next: NextFunction) => {
         const error = {
           error: err.message,
           extra_info: err.extraInfo || null,

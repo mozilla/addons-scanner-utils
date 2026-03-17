@@ -1,37 +1,38 @@
 /**
- * Error object with HTTP status code and optional extra information.
+ * Error object with HTTP status code and optional extra information intended
+ * to be used by the error handler defined in `src/functions/index.ts`.
  *
  * @property message - Error message
  * @property extraInfo - Additional error details
  * @property status - HTTP status code
  */
-export type ApiError = Error & {
+export type AppError = Error & {
   extraInfo?: string;
   status: number;
 };
 
 /**
- * Parameters for creating an API error.
+ * Parameters for creating an app error.
  *
  * @property message - Error message
  * @property extraInfo - Additional error details
  * @property status - HTTP status code (default: 500)
  */
-export type CreateApiErrorParams = {
+export type CreateAppErrorParams = {
   message: string;
   extraInfo?: string;
   status?: number;
 };
 
 /**
- * Create API error object with status code and extra information.
+ * Create an app error object with status code and extra information.
  */
-export const createApiError = ({
+export const createAppError = ({
   message,
   extraInfo,
   status = 500,
-}: CreateApiErrorParams): ApiError => {
-  const error = new Error(message) as ApiError;
+}: CreateAppErrorParams): AppError => {
+  const error = new Error(message) as AppError;
   error.status = status;
   error.extraInfo = extraInfo;
 
