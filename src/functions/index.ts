@@ -9,7 +9,7 @@ import express, {
 import bodyParser from 'body-parser';
 import safeCompare from 'safe-compare';
 
-import { ApiError, createApiError } from './api';
+import { ApiError, createApiError } from './error';
 
 /**
  * Extended Express request type with additional properties added by the
@@ -210,6 +210,6 @@ export const createExpressApp =
     return app;
   };
 
-export * from './api';
 export * from './auth';
 export * from './download';
+export * from './error';

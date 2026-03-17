@@ -5,7 +5,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import type { ReadableStream } from 'node:stream/web';
 
-import { createApiError } from './api';
+import { createApiError } from './error';
 import { makeJWT, MakeJWTConfig } from './auth';
 
 export const DEFAULT_DOWNLOAD_FILENAME = 'input.xpi';
