@@ -18,14 +18,10 @@
     "yauzl": "3.2.1"
   },
   "peerDependencies": {
-    "body-parser": "2.2.2",
     "express": "5.2.1",
     "safe-compare": "1.1.4"
   },
   "peerDependenciesMeta": {
-    "body-parser": {
-      "optional": true
-    },
     "express": {
       "optional": true
     },
@@ -44,7 +40,6 @@
     "@types/yauzl": "2.10.3",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
-    "body-parser": "2.2.2",
     "eslint": "^9.0.0",
     "eslint-config-amo": "^8.0.0",
     "eslint-import-resolver-typescript": "^4.4.4",
