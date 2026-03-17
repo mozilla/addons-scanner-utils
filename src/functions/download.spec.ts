@@ -37,25 +37,25 @@ describe(__filename, () => {
       expect(error.extraInfo).toEqual(extraInfo);
     });
 
-    it('converts to ApiError', () => {
+    it('converts to AppError', () => {
       const message = 'test error';
       const status = 400;
       const extraInfo = 'extra context';
       const error = new DownloadFileError(message, extraInfo, status);
 
-      const apiError = error.toApiError();
+      const appError = error.toAppError();
 
-      expect(apiError.message).toEqual(message);
-      expect(apiError.status).toEqual(status);
-      expect(apiError.extraInfo).toEqual(extraInfo);
+      expect(appError.message).toEqual(message);
+      expect(appError.status).toEqual(status);
+      expect(appError.extraInfo).toEqual(extraInfo);
     });
 
-    it('converts to ApiError with default status', () => {
+    it('converts to AppError with default status', () => {
       const error = new DownloadFileError('test');
 
-      const apiError = error.toApiError();
+      const appError = error.toAppError();
 
-      expect(apiError.status).toEqual(500);
+      expect(appError.status).toEqual(500);
     });
   });
 

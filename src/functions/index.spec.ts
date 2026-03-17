@@ -4,15 +4,15 @@ import request from 'supertest';
 import {
   FunctionConfig,
   RequestWithExtraProps,
-  createApiError,
+  createAppError,
   createExpressApp,
 } from '.';
 
 describe(__filename, () => {
-  describe('createApiError', () => {
+  describe('createAppError', () => {
     it('returns an API error with a message', () => {
       const message = 'oops, error';
-      const error = createApiError({ message });
+      const error = createAppError({ message });
 
       expect(error.message).toEqual(message);
       expect(error.status).toBeDefined();
@@ -20,21 +20,21 @@ describe(__filename, () => {
     });
 
     it('sets the status to 500 by default', () => {
-      const error = createApiError({ message: '' });
+      const error = createAppError({ message: '' });
 
       expect(error.status).toEqual(500);
     });
 
     it('sets a status to an error', () => {
       const status = 404;
-      const error = createApiError({ message: '', status });
+      const error = createAppError({ message: '', status });
 
       expect(error.status).toEqual(status);
     });
 
     it('adds extraInfo to an error', () => {
       const extraInfo = 'some extra info';
-      const error = createApiError({ message: '', extraInfo });
+      const error = createAppError({ message: '', extraInfo });
 
       expect(error.extraInfo).toEqual(extraInfo);
     });

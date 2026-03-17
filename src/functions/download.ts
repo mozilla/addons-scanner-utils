@@ -5,7 +5,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import type { ReadableStream } from 'node:stream/web';
 
-import { createApiError } from './error';
+import { createAppError } from './error';
 import { makeJWT, MakeJWTConfig } from './auth';
 
 export const DEFAULT_DOWNLOAD_FILENAME = 'input.xpi';
@@ -13,8 +13,10 @@ export const DEFAULT_DOWNLOAD_FILENAME = 'input.xpi';
 /**
  * Error thrown when file download operations fail.
  *
- * @property status - HTTP status code
  * @property extraInfo - Additional error details
+ * @property status - HTTP status code to be used when returning the error
+ * response to the client. This is not the HTTP status code received when trying
+ * to download a file.
  */
 export class DownloadFileError extends Error {
   status: number;
@@ -30,10 +32,10 @@ export class DownloadFileError extends Error {
   }
 
   /**
-   * Convert this error to ApiError format.
+   * Convert this error to AppError format.
    */
-  toApiError() {
-    return createApiError({
+  toAppError() {
+    return createAppError({
       message: this.message,
       extraInfo: this.extraInfo,
       status: this.status,
