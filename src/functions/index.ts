@@ -6,7 +6,6 @@ import express, {
   RequestHandler,
   Response,
 } from 'express';
-import bodyParser from 'body-parser';
 import safeCompare from 'safe-compare';
 
 import { AppError, createAppError } from './error';
@@ -90,7 +89,7 @@ export const createExpressApp =
     };
 
     // Parse JSON body requests.
-    app.use(bodyParser.json(jsonOptions));
+    app.use(express.json(jsonOptions));
 
     // Authentication middleware plus some extra checks.
     app.use(
