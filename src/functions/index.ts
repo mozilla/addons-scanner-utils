@@ -54,7 +54,6 @@ export type FunctionConfig = {
  *   via `apiKeyEnvVarName`)
  *
  * **Authentication:**
- * - Bearer token: `Authorization: Bearer <api_key>` (deprecated)
  * - HMAC-SHA256: `Authorization: HMAC-SHA256 <digest>` (digest of request
  *   body)
  */
@@ -140,16 +139,6 @@ export const createExpressApp =
             .digest('hex');
 
           if (!safeCompare(`HMAC-SHA256 ${digest}`, authorization)) {
-            next(
-              createAppError({
-                message: 'authentication has failed',
-                status: 401,
-              }),
-            );
-            return;
-          }
-        } else if (authorization.startsWith('Bearer ')) {
-          if (!safeCompare(`Bearer ${apiKey}`, authorization)) {
             next(
               createAppError({
                 message: 'authentication has failed',
