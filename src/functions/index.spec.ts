@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+
 import express from 'express';
 import request from 'supertest';
 
@@ -70,14 +72,12 @@ describe(__filename, () => {
       return (handler: express.Handler) => ({
         app: decorator(handler),
         sendApiKey: (app: request.Request) => {
-          return app.set('authorization', `Bearer ${apiKey}`).send({});
-        },
-        sendWithAuthHeader: (
-          app: request.Request,
-          authorization: string,
-          body: object = {},
-        ) => {
-          return app.set('authorization', authorization).send(body);
+          const body = { some: 'value' };
+          const digest = crypto
+            .createHmac('sha256', apiKey)
+            .update(JSON.stringify(body))
+            .digest('hex');
+          return app.set('authorization', `HMAC-SHA256 ${digest}`).send(body);
         },
       });
     };
@@ -109,20 +109,25 @@ describe(__filename, () => {
 
       const response = await request(app)
         .post('/')
-        .set('authorization', 'Bearer ')
+        .set('authorization', 'HMAC-SHA256 ')
         .send({});
 
       expect(response.status).toEqual(500);
       expect(response.body).toMatchObject({ error: 'api key must be set' });
     });
 
-    it('returns a 401 when api key is invalid', async () => {
+    it('returns a 401 when an invalid api key creates an unexpected signature', async () => {
       const { app } = _createExpressApp()(okHandler);
 
+      const body = { some: 'value' };
+      const digest = crypto
+        .createHmac('sha256', 'invalid-api-key')
+        .update(JSON.stringify(body))
+        .digest('hex');
       const response = await request(app)
         .post('/')
-        .set('authorization', 'Bearer invalid api key')
-        .send({});
+        .set('authorization', `HMAC-SHA256 ${digest}`)
+        .send(body);
 
       expect(response.status).toEqual(401);
       expect(response.body).toMatchObject({
@@ -185,16 +190,19 @@ describe(__filename, () => {
     });
 
     it('rejects unsupport auth schemes', async () => {
-      const { app, sendWithAuthHeader } = _createExpressApp({
+      const { app } = _createExpressApp({
         apiKey: 'api-key',
       })(okHandler);
 
       const body = { download_url: `${testAllowedOrigin}/some.xpi` };
-      const response = await sendWithAuthHeader(
-        request(app).post('/'),
-        `HMAC ccb46b24272fc0260997debe19928fc771ffae8bcc153c8ee9cf08d278ad72f3`,
-        body,
-      );
+      const response = await request(app)
+        .post('/')
+        .set('content-type', 'application/json')
+        .set(
+          'authorization',
+          `HMAC ccb46b24272fc0260997debe19928fc771ffae8bcc153c8ee9cf08d278ad72f3`,
+        )
+        .send(body);
 
       expect(response.status).toEqual(400);
       expect(response.body).toMatchObject({
@@ -259,21 +267,6 @@ describe(__filename, () => {
         .send(JSON.stringify(body, null, 4));
 
       expect(response.status).toEqual(200);
-    });
-
-    it('rejects invalid signatures', async () => {
-      const { app, sendWithAuthHeader } = _createExpressApp({
-        apiKey: 'api-key',
-      })(okHandler);
-
-      const body = { download_url: `${testAllowedOrigin}/some.xpi` };
-      const response = await sendWithAuthHeader(
-        request(app).post('/'),
-        `HMAC-SHA256 f6c49a0baaa2d7b14ddd899334ecaed17359c9c831f4e9123302a7c12fd2e138`,
-        body,
-      );
-
-      expect(response.status).toEqual(401);
     });
   });
 });
