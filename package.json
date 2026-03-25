@@ -4,6 +4,32 @@
   "description": "Various addons related helpers to build CLIs.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./functions": {
+      "types": "./dist/functions/index.d.ts",
+      "default": "./dist/functions/index.js"
+    },
+    "./functions/*": {
+      "types": "./dist/functions/*.d.ts",
+      "default": "./dist/functions/*.js"
+    },
+    "./io": {
+      "types": "./dist/io/index.d.ts",
+      "default": "./dist/io/index.js"
+    },
+    "./io/*": {
+      "types": "./dist/io/*.d.ts",
+      "default": "./dist/io/*.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
   "files": [
     "dist/**/*"
   ],
