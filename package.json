@@ -66,7 +66,7 @@
     "@types/yauzl": "2.10.3",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
-    "eslint": "^9.0.0",
+    "eslint": "^10.1.0",
     "eslint-config-amo": "^8.0.0",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-amo": "^3.0.0",
