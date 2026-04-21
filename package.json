@@ -40,7 +40,7 @@
     "first-chunk-stream": "3.0.0",
     "jsonwebtoken": "^9.0.3",
     "strip-bom-stream": "4.0.0",
-    "upath": "2.0.1",
+    "upath": "3.0.7",
     "yauzl": "3.3.0"
   },
   "peerDependencies": {
