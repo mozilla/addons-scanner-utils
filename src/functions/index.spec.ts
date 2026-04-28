@@ -58,6 +58,7 @@ describe(__filename, () => {
       _console,
       apiKey = 'valid api key',
       apiKeyEnvVarName = 'API_KEY',
+      maxRequestBodySize,
     }: Partial<
       FunctionConfig & { apiKey: string; allowedOrigin: string }
     > = {}) => {
@@ -67,6 +68,7 @@ describe(__filename, () => {
         _console,
         _process,
         apiKeyEnvVarName,
+        maxRequestBodySize,
       });
 
       return (handler: express.Handler) => ({
@@ -267,6 +269,16 @@ describe(__filename, () => {
         .send(JSON.stringify(body, null, 4));
 
       expect(response.status).toEqual(200);
+    });
+
+    it('returns a 413 when the request body exceeds the configured limit', async () => {
+      const { app, sendApiKey } = _createExpressApp({ maxRequestBodySize: 1 })(
+        okHandler,
+      );
+
+      const response = await sendApiKey(request(app).post('/'));
+
+      expect(response.status).toEqual(413);
     });
   });
 });

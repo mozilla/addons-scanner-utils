@@ -28,11 +28,15 @@ export type RequestWithExtraProps = Request & {
  * @property _process - Process object for environment variables (for testing
  *   purposes)
  * @property apiKeyEnvVarName - Environment variable name for the API key
+ * @property maxRequestBodySize - Controls the maximum request body size. If
+ *   this is a number, then the value specifies the number of bytes; if it is a
+ *   string, the value is passed to the bytes library for parsing.
  */
 export type FunctionConfig = {
   _console?: typeof console;
   _process?: typeof process;
   apiKeyEnvVarName?: string;
+  maxRequestBodySize?: string | number;
 };
 
 /**
@@ -62,6 +66,7 @@ export const createExpressApp =
     _console = console,
     _process = process,
     apiKeyEnvVarName = 'LAMBDA_API_KEY',
+    maxRequestBodySize = '1mb',
   }: FunctionConfig = {}) =>
   (handler: RequestHandler) => {
     const app = express();
@@ -75,6 +80,7 @@ export const createExpressApp =
 
     // This is the options we pass to the `json()` middleware.
     const jsonOptions = {
+      limit: maxRequestBodySize,
       // This is a hack to retain the raw body on the request object. We need
       // this to verify the signature of the request.
       verify(
