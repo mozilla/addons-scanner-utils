@@ -41,7 +41,7 @@
     "jsonwebtoken": "^9.0.3",
     "strip-bom-stream": "4.0.0",
     "upath": "3.0.7",
-    "yauzl": "3.3.1"
+    "yauzl": "3.3.2"
   },
   "peerDependencies": {
     "express": "5.2.1",
