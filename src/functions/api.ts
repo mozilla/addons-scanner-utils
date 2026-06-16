@@ -1,5 +1,6 @@
 import { AMOError } from './error';
 import { makeJWT, MakeJWTConfig } from './auth';
+import { withRequestIdHeader } from './request-context';
 
 /**
  * Parameters for patching a scanner result.
@@ -37,10 +38,10 @@ export const patchScannerResult = async ({
 }: PatchScannerResultParams): Promise<void> => {
   const response = await fetch(url, {
     method: 'PATCH',
-    headers: {
+    headers: withRequestIdHeader({
       'Content-Type': 'application/json',
       Authorization: `JWT ${makeJWT({ env })}`,
-    },
+    }),
     body: JSON.stringify(payload),
   });
 
@@ -63,10 +64,10 @@ export const postScannerResult = async ({
 }: PostScannerResultParams): Promise<void> => {
   const response = await fetch(url, {
     method: 'POST',
-    headers: {
+    headers: withRequestIdHeader({
       'Content-Type': 'application/json',
       Authorization: `JWT ${makeJWT({ env })}`,
-    },
+    }),
     body: JSON.stringify(payload),
   });
 

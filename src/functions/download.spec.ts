@@ -9,6 +9,10 @@ import {
   downloadFile,
   downloadFileUpload,
 } from './download';
+import {
+  AMO_REQUEST_ID_HEADER,
+  requestContextStorage,
+} from './request-context';
 
 describe(__filename, () => {
   describe('DownloadFileError', () => {
@@ -96,6 +100,37 @@ describe(__filename, () => {
         .calls[0];
       expect(calledURL).toEqual(downloadURL);
       expect(calledOptions.headers.Authorization).toMatch(/^JWT /);
+    });
+
+    it('sends the X-AMO-Request-ID header when a request ID is in scope', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        body: Readable.toWeb(Readable.from([Buffer.from('content')])),
+        status: 200,
+        statusText: 'OK',
+      });
+
+      const requestId = 'req-123';
+      await requestContextStorage.run({ requestId }, () =>
+        downloadFile({ downloadURL, tmpDir, env }),
+      );
+
+      const [, calledOptions] = (global.fetch as jest.Mock).mock.calls[0];
+      expect(calledOptions.headers[AMO_REQUEST_ID_HEADER]).toEqual(requestId);
+    });
+
+    it('does not send the X-AMO-Request-ID header without a request ID', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        body: Readable.toWeb(Readable.from([Buffer.from('content')])),
+        status: 200,
+        statusText: 'OK',
+      });
+
+      await downloadFile({ downloadURL, tmpDir, env });
+
+      const [, calledOptions] = (global.fetch as jest.Mock).mock.calls[0];
+      expect(calledOptions.headers).not.toHaveProperty(AMO_REQUEST_ID_HEADER);
     });
 
     it('can use a custom filename', async () => {
@@ -206,7 +241,7 @@ describe(__filename, () => {
       const downloadedContent = fs.readFileSync(filepath, 'utf-8');
       expect(downloadedContent).toEqual(fileContent);
       expect(global.fetch).toHaveBeenCalledWith(validURL, {
-        headers: undefined,
+        headers: {},
       });
     });
 

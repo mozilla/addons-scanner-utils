@@ -10,6 +10,7 @@ import express, {
 import safeCompare from 'safe-compare';
 
 import { AppError, createAppError } from './error';
+import { requestIdMiddleware } from './request-context';
 
 /**
  * Express error handling middleware that serializes an {@link AppError} to a
@@ -32,8 +33,12 @@ export const createErrorHandler =
 
     res.status(err.status || 500).json(error);
 
-    // Also send the error to the cloud provider.
-    _console.error(error);
+    // Also send the error to the cloud provider, including the request ID for
+    // traceability when available.
+    _console.error({
+      ...error,
+      request_id: (req as RequestWithExtraProps).amoRequestId || null,
+    });
   };
 
 /**
@@ -42,9 +47,13 @@ export const createErrorHandler =
  *
  * @property rawBody - Raw request body buffer used for HMAC signature
  *   verification
+ * @property amoRequestId - Value of the incoming `X-AMO-Request-ID` header, or
+ *   a generated UUID when the header is absent. Exposed for convenience (e.g.
+ *   logging) in addition to being stored in the request context.
  */
 export type RequestWithExtraProps = Request & {
   rawBody?: Buffer;
+  amoRequestId?: string;
 };
 
 /**
@@ -121,6 +130,9 @@ export const createExpressApp =
 
     // Parse JSON body requests.
     app.use(express.json(jsonOptions));
+
+    // Capture the request ID and make it available for the rest of the chain.
+    app.use(requestIdMiddleware);
 
     // Authentication middleware plus some extra checks.
     app.use(
@@ -220,3 +232,4 @@ export * from './api';
 export * from './auth';
 export * from './download';
 export * from './error';
+export * from './request-context';

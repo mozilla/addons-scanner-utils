@@ -7,6 +7,7 @@ import type { ReadableStream } from 'node:stream/web';
 
 import { createAppError } from './error';
 import { makeJWT, MakeJWTConfig } from './auth';
+import { withRequestIdHeader } from './request-context';
 
 export const DEFAULT_DOWNLOAD_FILENAME = 'input.xpi';
 
@@ -47,10 +48,12 @@ const fetchToFile = async (
   downloadURL: string,
   tmpDir: string,
   filename: string,
-  headers?: HeadersInit,
+  headers?: Record<string, string>,
 ): Promise<string> => {
   try {
-    const response = await fetch(downloadURL, { headers });
+    const response = await fetch(downloadURL, {
+      headers: withRequestIdHeader(headers),
+    });
 
     if (!response.ok || !response.body) {
       throw new DownloadFileError(

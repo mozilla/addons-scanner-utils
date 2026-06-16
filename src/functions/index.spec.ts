@@ -4,10 +4,12 @@ import express from 'express';
 import request from 'supertest';
 
 import {
+  AMO_REQUEST_ID_HEADER,
   FunctionConfig,
   RequestWithExtraProps,
   createAppError,
   createExpressApp,
+  getRequestId,
 } from '.';
 
 describe(__filename, () => {
@@ -45,6 +47,10 @@ describe(__filename, () => {
   describe('createExpressApp', () => {
     const testAllowedOrigin =
       'https://dont-use-this-subdomain.addons.mozilla.org';
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
 
     const createProcessWithEnv = (env = {}) => {
       return { ...process, env } as typeof process;
@@ -269,6 +275,55 @@ describe(__filename, () => {
         .send(JSON.stringify(body, null, 4));
 
       expect(response.status).toEqual(200);
+    });
+
+    it('exposes the X-AMO-Request-ID to the handler via the request context', async () => {
+      const requestId = 'req-xyz-789';
+      const requestIdHandler = (
+        req: RequestWithExtraProps,
+        res: express.Response,
+      ) => {
+        return res.json({
+          fromContext: getRequestId(),
+          fromRequest: req.amoRequestId,
+        });
+      };
+
+      const { app, sendApiKey } = _createExpressApp()(requestIdHandler);
+
+      const response = await sendApiKey(
+        request(app).post('/').set(AMO_REQUEST_ID_HEADER, requestId),
+      );
+
+      expect(response.status).toEqual(200);
+      expect(response.body).toEqual({
+        fromContext: requestId,
+        fromRequest: requestId,
+      });
+    });
+
+    it('generates a request ID when the X-AMO-Request-ID header is absent', async () => {
+      const generatedId = '11111111-2222-3333-4444-555555555555';
+      jest.spyOn(crypto, 'randomUUID').mockReturnValue(generatedId);
+
+      const requestIdHandler = (
+        req: RequestWithExtraProps,
+        res: express.Response,
+      ) => {
+        return res.json({
+          fromContext: getRequestId(),
+          fromRequest: req.amoRequestId,
+        });
+      };
+
+      const { app, sendApiKey } = _createExpressApp()(requestIdHandler);
+
+      const response = await sendApiKey(request(app).post('/'));
+
+      expect(response.status).toEqual(200);
+      // The generated ID is exposed both on the request and in the context.
+      expect(response.body.fromContext).toEqual(generatedId);
+      expect(response.body.fromRequest).toEqual(generatedId);
     });
 
     it('returns a 413 when the request body exceeds the configured limit', async () => {
