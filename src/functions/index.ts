@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 
 import express, {
+  ErrorRequestHandler,
   NextFunction,
   Request,
   RequestHandler,
@@ -9,6 +10,31 @@ import express, {
 import safeCompare from 'safe-compare';
 
 import { AppError, createAppError } from './error';
+
+/**
+ * Express error handling middleware that serializes an {@link AppError} to a
+ * JSON response and logs it.
+ *
+ * @param _console - Console object for logging (for testing purposes)
+ */
+export const createErrorHandler =
+  ({
+    _console = console,
+  }: { _console?: typeof console } = {}): ErrorRequestHandler =>
+  // Even though we are not using `next`, it must be kept because the Express
+  // error handler signature requires 4 arguments.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  (err: AppError, req: Request, res: Response, next: NextFunction) => {
+    const error = {
+      error: err.message,
+      extra_info: err.extraInfo || null,
+    };
+
+    res.status(err.status || 500).json(error);
+
+    // Also send the error to the cloud provider.
+    _console.error(error);
+  };
 
 /**
  * Extended Express request type with additional properties added by the
@@ -184,22 +210,8 @@ export const createExpressApp =
       next(createAppError({ message: 'not found', status: 404 }));
     });
 
-    // Error handler. Even though we are not using `next`, it must be kept
-    // because the Express error handler signature requires 4 arguments.
-    app.use(
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      (err: AppError, req: Request, res: Response, next: NextFunction) => {
-        const error = {
-          error: err.message,
-          extra_info: err.extraInfo || null,
-        };
-
-        res.status(err.status || 500).json(error);
-
-        // Also send the error to the cloud provider.
-        _console.error(error);
-      },
-    );
+    // Error handler.
+    app.use(createErrorHandler({ _console }));
 
     return app;
   };
