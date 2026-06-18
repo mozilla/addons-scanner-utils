@@ -1,4 +1,8 @@
 import { patchScannerResult, postScannerResult } from './api';
+import {
+  AMO_REQUEST_ID_HEADER,
+  requestContextStorage,
+} from './request-context';
 
 describe(__filename, () => {
   const issKey = 'test-iss-key';
@@ -24,6 +28,35 @@ describe(__filename, () => {
       expect(calledOptions.headers['Content-Type']).toEqual('application/json');
       expect(calledOptions.headers.Authorization).toMatch(/^JWT /);
       expect(calledOptions.body).toEqual(JSON.stringify(payload));
+    });
+
+    it('sends the X-AMO-Request-ID header when a request ID is in scope', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+      });
+
+      const requestId = 'req-123';
+      await requestContextStorage.run({ requestId }, () =>
+        patchScannerResult({ url, payload, env }),
+      );
+
+      const [, calledOptions] = (global.fetch as jest.Mock).mock.calls[0];
+      expect(calledOptions.headers[AMO_REQUEST_ID_HEADER]).toEqual(requestId);
+    });
+
+    it('does not send the X-AMO-Request-ID header without a request ID', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+      });
+
+      await patchScannerResult({ url, payload, env });
+
+      const [, calledOptions] = (global.fetch as jest.Mock).mock.calls[0];
+      expect(calledOptions.headers).not.toHaveProperty(AMO_REQUEST_ID_HEADER);
     });
 
     it('throws AMOError when response is not ok', async () => {
@@ -68,6 +101,35 @@ describe(__filename, () => {
       expect(calledOptions.headers['Content-Type']).toEqual('application/json');
       expect(calledOptions.headers.Authorization).toMatch(/^JWT /);
       expect(calledOptions.body).toEqual(JSON.stringify(payload));
+    });
+
+    it('sends the X-AMO-Request-ID header when a request ID is in scope', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 201,
+        statusText: 'Created',
+      });
+
+      const requestId = 'req-123';
+      await requestContextStorage.run({ requestId }, () =>
+        postScannerResult({ url, payload, env }),
+      );
+
+      const [, calledOptions] = (global.fetch as jest.Mock).mock.calls[0];
+      expect(calledOptions.headers[AMO_REQUEST_ID_HEADER]).toEqual(requestId);
+    });
+
+    it('does not send the X-AMO-Request-ID header without a request ID', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 201,
+        statusText: 'Created',
+      });
+
+      await postScannerResult({ url, payload, env });
+
+      const [, calledOptions] = (global.fetch as jest.Mock).mock.calls[0];
+      expect(calledOptions.headers).not.toHaveProperty(AMO_REQUEST_ID_HEADER);
     });
 
     it('throws AMOError when response is not ok', async () => {
