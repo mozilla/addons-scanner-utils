@@ -1,15 +1,4 @@
-/**
- * Error object with HTTP status code and optional extra information intended
- * to be used by the error handler defined in `src/functions/index.ts`.
- *
- * @property message - Error message
- * @property extraInfo - Additional error details
- * @property status - HTTP status code
- */
-export type AppError = Error & {
-  extraInfo?: string;
-  status: number;
-};
+/* eslint-disable max-classes-per-file */
 
 /**
  * Parameters for creating an app error.
@@ -25,18 +14,31 @@ export type CreateAppErrorParams = {
 };
 
 /**
+ * Error with an HTTP status code and optional extra information intended to be
+ * used by the error handler defined in `src/functions/index.ts`.
+ *
+ * @property extraInfo - Additional error details
+ * @property status - HTTP status code
+ */
+export class AppError extends Error {
+  extraInfo?: string;
+
+  status: number;
+
+  constructor({ message, extraInfo, status = 500 }: CreateAppErrorParams) {
+    super(message);
+
+    this.name = 'AppError';
+    this.status = status;
+    this.extraInfo = extraInfo;
+  }
+}
+
+/**
  * Create an app error object with status code and extra information.
  */
-export const createAppError = ({
-  message,
-  extraInfo,
-  status = 500,
-}: CreateAppErrorParams): AppError => {
-  const error = new Error(message) as AppError;
-  error.status = status;
-  error.extraInfo = extraInfo;
-
-  return error;
+export const createAppError = (params: CreateAppErrorParams): AppError => {
+  return new AppError(params);
 };
 
 /**
