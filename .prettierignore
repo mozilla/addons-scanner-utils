@@ -2,6 +2,7 @@
 *.*
 # exclude these files
 *.js
+/CODEOWNERS
 /codecov
 # exclude these directories
 /bin/
