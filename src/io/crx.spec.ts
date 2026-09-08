@@ -17,6 +17,7 @@ describe(__filename, () => {
     compressedSize: 138,
     uncompressedSize: 275,
     fileName: 'chrome.manifest',
+    fileNameRaw: Buffer.from('chrome.manifest'),
   } as Entry;
 
   const installFileEntry = {
@@ -24,6 +25,7 @@ describe(__filename, () => {
     compressedSize: 416,
     uncompressedSize: 851,
     fileName: 'manifest.json',
+    fileNameRaw: Buffer.from('manifest.json'),
   } as Entry;
 
   const chromeContentDir = {
@@ -31,6 +33,7 @@ describe(__filename, () => {
     compressedSize: 0,
     uncompressedSize: 0,
     fileName: 'chrome/content/',
+    fileNameRaw: Buffer.from('chrome/content/'),
   } as Entry;
 
   class CrxTest extends Crx {

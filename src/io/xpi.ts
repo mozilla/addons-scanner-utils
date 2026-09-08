@@ -6,9 +6,19 @@ import stripBomStream from 'strip-bom-stream';
 import { oneLine } from 'common-tags';
 
 import { IOBaseConstructorParams, IOBase } from './base';
+import { INVALID_ENTRY_NAME_REGEX } from './const';
 import { InvalidZipFileError, DuplicateZipEntryError } from '../errors';
 
 export type Files = { [filename: string]: Entry };
+
+const escapeEntryName = (fileName: string): string => {
+  return fileName.replace(
+    new RegExp(INVALID_ENTRY_NAME_REGEX, `${INVALID_ENTRY_NAME_REGEX.flags}g`),
+    (char: string) => {
+      return `\\u${char.codePointAt(0)!.toString(16).padStart(4, '0')}`;
+    },
+  );
+};
 
 type XpiConstructorParams = IOBaseConstructorParams & {
   autoClose?: boolean;
@@ -86,6 +96,21 @@ export class Xpi extends IOBase {
   }
 
   handleEntry(entry: Entry, reject: (error: Error) => void) {
+    // Look for invalid entries, including directories. We also check the raw
+    // bytes because `yauzl` decodes the name with CP437 unless the entry is
+    // flagged as UTF-8, and CP437 maps the control bytes to printable glyphs.
+    if (
+      INVALID_ENTRY_NAME_REGEX.test(entry.fileName) ||
+      INVALID_ENTRY_NAME_REGEX.test(entry.fileNameRaw.toString('utf8'))
+    ) {
+      reject(
+        new InvalidZipFileError(
+          `invalid characters in fileName: "${escapeEntryName(entry.fileName)}"`,
+        ),
+      );
+      return;
+    }
+
     if (/\/$/.test(entry.fileName)) {
       return;
     }
