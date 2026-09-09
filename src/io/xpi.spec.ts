@@ -23,6 +23,7 @@ describe(__filename, () => {
     compressedSize: 138,
     uncompressedSize: 275,
     fileName: 'chrome.manifest',
+    fileNameRaw: Buffer.from('chrome.manifest'),
   } as Entry;
 
   const installFileEntry = {
@@ -30,6 +31,7 @@ describe(__filename, () => {
     compressedSize: 416,
     uncompressedSize: 851,
     fileName: 'manifest.json',
+    fileNameRaw: Buffer.from('manifest.json'),
   } as Entry;
 
   const dupeInstallFileEntry = {
@@ -37,6 +39,7 @@ describe(__filename, () => {
     compressedSize: 416,
     uncompressedSize: 851,
     fileName: 'manifest.json',
+    fileNameRaw: Buffer.from('manifest.json'),
   } as Entry;
 
   const jsMainFileEntry = {
@@ -44,6 +47,7 @@ describe(__filename, () => {
     compressedSize: 41,
     uncompressedSize: 85,
     fileName: 'main.js',
+    fileNameRaw: Buffer.from('main.js'),
   } as Entry;
 
   const jsSecondaryFileEntry = {
@@ -51,6 +55,7 @@ describe(__filename, () => {
     compressedSize: 456,
     uncompressedSize: 851,
     fileName: 'secondary.js',
+    fileNameRaw: Buffer.from('secondary.js'),
   } as Entry;
 
   const chromeContentDir = {
@@ -58,6 +63,7 @@ describe(__filename, () => {
     compressedSize: 0,
     uncompressedSize: 0,
     fileName: 'chrome/content/',
+    fileNameRaw: Buffer.from('chrome/content/'),
   };
 
   class XpiTest extends Xpi {
@@ -431,6 +437,125 @@ describe(__filename, () => {
       await expect(xpi.getFiles()).rejects.toThrow(InvalidZipFileError);
 
       xpi.close();
+    });
+
+    it.each([
+      ['with-newline\n.js', '"with-newline\\u000a.js"'],
+      ['with-null\x00.js', '"with-null\\u0000.js"'],
+      ['with-escape\x1b[31m.js', '"with-escape\\u001b[31m.js"'],
+      ['with-delete\x7f.js', '"with-delete\\u007f.js"'],
+      ['with-nel\x85.js', '"with-nel\\u0085.js"'],
+      ['with-csi\x9b31m.js', '"with-csi\\u009b31m.js"'],
+    ])(
+      'should reject entries with control characters in their name: %j',
+      async (fileName, expectedNameInMessage) => {
+        const myXpi = createXpi();
+        openStub.mockImplementation(
+          (
+            path: string,
+            options: yauzl.Options,
+            callback: (err: Error | null, zipfile: ZipFile) => void,
+          ) => {
+            setImmediate(() => callback(null, fakeZipFile));
+          },
+        );
+
+        const onEventsSubscribed = () => {
+          const entryCallback = entryStub.mock.calls[0][0];
+          entryCallback.call(null, {
+            ...installFileEntry,
+            fileName,
+            fileNameRaw: Buffer.from(fileName),
+          } as Entry);
+        };
+
+        const promise = myXpi.getFiles(onEventsSubscribed);
+        await expect(promise).rejects.toThrow(
+          `invalid characters in fileName: ${expectedNameInMessage}`,
+        );
+        await expect(promise).rejects.toThrow(InvalidZipFileError);
+      },
+    );
+
+    it('should reject entries with control characters in their raw name', async () => {
+      const myXpi = createXpi();
+      openStub.mockImplementation(
+        (
+          path: string,
+          options: yauzl.Options,
+          callback: (err: Error | null, zipfile: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(null, fakeZipFile));
+        },
+      );
+
+      const onEventsSubscribed = () => {
+        const entryCallback = entryStub.mock.calls[0][0];
+        entryCallback.call(null, {
+          ...installFileEntry,
+          // Not flagged as UTF-8: CP437 turns the escape char into an arrow.
+          fileName: 'with-escape\u2190[31m.js',
+          fileNameRaw: Buffer.from('with-escape\x1b[31m.js', 'utf8'),
+        } as Entry);
+      };
+
+      await expect(myXpi.getFiles(onEventsSubscribed)).rejects.toThrow(
+        InvalidZipFileError,
+      );
+    });
+
+    it('should reject directory entries with control characters in their name', async () => {
+      const myXpi = createXpi();
+      openStub.mockImplementation(
+        (
+          path: string,
+          options: yauzl.Options,
+          callback: (err: Error | null, zipfile: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(null, fakeZipFile));
+        },
+      );
+
+      const onEventsSubscribed = () => {
+        const entryCallback = entryStub.mock.calls[0][0];
+        entryCallback.call(null, {
+          ...chromeContentDir,
+          fileName: 'bad\ndir/',
+          fileNameRaw: Buffer.from('bad\ndir/'),
+        } as Entry);
+      };
+
+      await expect(myXpi.getFiles(onEventsSubscribed)).rejects.toThrow(
+        InvalidZipFileError,
+      );
+    });
+
+    it('should reject entries with control characters in their name even when the file is not scanned', async () => {
+      const myXpi = createXpi();
+      openStub.mockImplementation(
+        (
+          path: string,
+          options: yauzl.Options,
+          callback: (err: Error | null, zipfile: ZipFile) => void,
+        ) => {
+          setImmediate(() => callback(null, fakeZipFile));
+        },
+      );
+
+      const onEventsSubscribed = () => {
+        const entryCallback = entryStub.mock.calls[0][0];
+        entryCallback.call(null, {
+          ...installFileEntry,
+          fileName: 'bad\nname.js',
+          fileNameRaw: Buffer.from('bad\nname.js'),
+        } as Entry);
+      };
+
+      myXpi.setScanFileCallback(() => false);
+
+      await expect(myXpi.getFiles(onEventsSubscribed)).rejects.toThrow(
+        InvalidZipFileError,
+      );
     });
   });
 
