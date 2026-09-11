@@ -52,10 +52,9 @@ We use [Prettier][] to automatically format our JavaScript code and stop all the
 
 ### Versioning
 
-This project follows the [semantic versioning](https://semver.org/) specification.
-
-In order to release a new version, one has to run the [`npm version`](https://docs.npmjs.com/cli/version) command with one of the following arguments: `minor`, `patch` or `major` (less frequent). This command (1) updates the `version` in `package.json`, (2) create a new commit for the release and (3) make a `git` tag.
+This project follows the [semantic versioning](https://semver.org/) specification. To release a new version of this library on npmjs.org, please see [our release process][].
 
 [eslint]: https://eslint.org/
 [jest]: https://jestjs.io/
+[our release process]: https://github.com/mozilla/addons/tree/1.1/.github/actions/release#release-process
 [prettier]: https://prettier.io/
