@@ -7,6 +7,19 @@ updates:
     open-pull-requests-limit: 99
     cooldown:
       default-days: 7
+    ignore:
+      # https://github.com/mozilla/addons-scanner-utils/issues/1170
+      - dependency-name: eslint
+        versions:
+          - ">= 10"
+      # https://github.com/mozilla/addons-scanner-utils/issues/1171
+      - dependency-name: typescript
+        versions:
+          - ">= 6"
+      # https://github.com/mozilla/addons-scanner-utils/issues/1172
+      - dependency-name: strip-bom-stream
+        versions:
+          - ">= 5"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
