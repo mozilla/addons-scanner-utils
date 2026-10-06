@@ -20,6 +20,10 @@ updates:
       - dependency-name: strip-bom-stream
         versions:
           - ">= 5"
+    groups:
+      typescript-eslint:
+        patterns:
+          - "@typescript-eslint/*"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
