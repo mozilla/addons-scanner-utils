@@ -21,6 +21,14 @@ updates:
         versions:
           - ">= 5"
     groups:
+      # Keep it first so that a dependency belonging to more than a
+      # group ends up in this group instead of a different group when
+      # it has a new "patch" version.
+      all-patch-releases:
+        patterns:
+          - "*"
+        update-types:
+          - patch
       typescript-eslint:
         patterns:
           - "@typescript-eslint/*"
