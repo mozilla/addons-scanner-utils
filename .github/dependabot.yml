@@ -7,6 +7,13 @@ updates:
     open-pull-requests-limit: 99
     cooldown:
       default-days: 7
+    allow:
+      - dependency-type: "development"
+        update-types:
+          # Let's ignore "semver-patch" releases for dev dependencies to reduce
+          # the amount of PRs we get every day.
+          - "version-update:semver-minor"
+          - "version-update:semver-major"
     ignore:
       # https://github.com/mozilla/addons-scanner-utils/issues/1170
       - dependency-name: eslint
