@@ -44,7 +44,7 @@
     "yauzl": "3.4.0"
   },
   "peerDependencies": {
-    "express": "5.2.1",
+    "express": "5.3.0",
     "safe-compare": "1.1.4"
   },
   "peerDependenciesMeta": {
@@ -70,7 +70,7 @@
     "eslint-config-amo": "^8.0.0",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-amo": "^3.0.0",
-    "express": "5.2.1",
+    "express": "5.3.0",
     "jest": "^30.2.0",
     "prettier": "3.9.9",
     "pretty-quick": "4.2.2",
