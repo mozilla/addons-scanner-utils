@@ -4,7 +4,7 @@ import { promisify } from 'util';
 
 import upath from 'upath';
 
-import { Stderr } from '../stdio';
+import { IOLogger } from './logger';
 
 export const lstat = promisify(fs.lstat);
 export const readFile = promisify(fs.readFile);
@@ -12,12 +12,12 @@ export const readdir = promisify(fs.readdir);
 
 export type WalkPromiseOptions = {
   shouldIncludePath?: (_path: string, isDirectory: boolean) => boolean;
-  stderr: Stderr;
+  logger: IOLogger;
 };
 
 export function walkPromise(
   curPath: string,
-  { shouldIncludePath = () => true, stderr }: WalkPromiseOptions,
+  { shouldIncludePath = () => true, logger }: WalkPromiseOptions,
 ) {
   const result: { [path: string]: { size: number } } = {};
   // Set a basePath var with the initial path so all file paths (the result
@@ -28,7 +28,7 @@ export function walkPromise(
     const relPath = upath.toUnix(path.relative(basePath, _curPath));
 
     if (!shouldIncludePath(relPath, stat.isDirectory())) {
-      stderr.debug(`Skipping file path: ${relPath}`);
+      logger.debug(`Skipping file path: ${relPath}`);
     } else if (stat.isFile()) {
       const { size } = stat;
       result[relPath] = { size };
