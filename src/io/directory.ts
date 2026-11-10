@@ -16,8 +16,8 @@ type DirectoryConstructorParams = IOBaseConstructorParams;
 export class Directory extends IOBase {
   files: Files;
 
-  constructor({ filePath, stderr }: DirectoryConstructorParams) {
-    super({ filePath, stderr });
+  constructor({ filePath, logger }: DirectoryConstructorParams) {
+    super({ filePath, logger });
 
     this.files = {};
   }
@@ -26,7 +26,7 @@ export class Directory extends IOBase {
     // If we have already processed this directory and have data on this
     // instance return that.
     if (Object.keys(this.files).length) {
-      this.stderr.debug(oneLine`Files already exist for directory
+      this.logger.debug(oneLine`Files already exist for directory
         "${this.path}" returning cached data`);
       return this.files;
     }
@@ -35,7 +35,7 @@ export class Directory extends IOBase {
       shouldIncludePath: (_path: string, isDirectory: boolean) => {
         return this.shouldScanFile(_path, isDirectory);
       },
-      stderr: this.stderr,
+      logger: this.logger,
     });
 
     this.files = files;

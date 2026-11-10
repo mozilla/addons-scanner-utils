@@ -10,18 +10,18 @@ import express, {
 import safeCompare from 'safe-compare';
 
 import { AppError, createAppError } from './error';
+import { Logger, getLogger } from './logger';
 import { requestIdMiddleware } from './request-context';
 
 /**
  * Express error handling middleware that serializes an {@link AppError} to a
- * JSON response and logs it.
+ * JSON response and logs it. Server errors (5xx) are logged with their stack
+ * trace, client errors (4xx) are logged as warnings.
  *
- * @param _console - Console object for logging (for testing purposes)
+ * @param _logger - Logger to use (default: {@link getLogger})
  */
 export const createErrorHandler =
-  ({
-    _console = console,
-  }: { _console?: typeof console } = {}): ErrorRequestHandler =>
+  ({ _logger = getLogger() }: { _logger?: Logger } = {}): ErrorRequestHandler =>
   // Even though we are not using `next`, it must be kept because the Express
   // error handler signature requires 4 arguments.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -31,14 +31,15 @@ export const createErrorHandler =
       extra_info: err.extraInfo || null,
     };
 
-    res.status(err.status || 500).json(error);
+    const status = err.status || 500;
 
-    // Also send the error to the cloud provider, including the request ID for
-    // traceability when available.
-    _console.error({
-      ...error,
-      request_id: (req as RequestWithExtraProps).amoRequestId || null,
-    });
+    res.status(status).json(error);
+
+    if (status >= 500) {
+      _logger.error({ err, status, extra_info: error.extra_info }, err.message);
+    } else {
+      _logger.warn({ status, extra_info: error.extra_info }, err.message);
+    }
   };
 
 /**
@@ -50,6 +51,8 @@ export const createErrorHandler =
  * @property amoRequestId - Value of the incoming `X-AMO-Request-ID` header, or
  *   a generated UUID when the header is absent. Exposed for convenience (e.g.
  *   logging) in addition to being stored in the request context.
+ *
+ * `req.logger` is declared on the Express `Request` type (see `logger.ts`).
  */
 export type RequestWithExtraProps = Request & {
   rawBody?: Buffer;
@@ -59,7 +62,8 @@ export type RequestWithExtraProps = Request & {
 /**
  * Configuration options for creating an Express application.
  *
- * @property _console - Console object for logging (for testing purposes)
+ * @property _logger - Logger used by the application (default:
+ *   {@link getLogger})
  * @property _process - Process object for environment variables (for testing
  *   purposes)
  * @property apiKeyEnvVarName - Environment variable name for the API key
@@ -68,7 +72,7 @@ export type RequestWithExtraProps = Request & {
  *   string, the value is passed to the bytes library for parsing.
  */
 export type FunctionConfig = {
-  _console?: typeof console;
+  _logger?: Logger;
   _process?: typeof process;
   apiKeyEnvVarName?: string;
   maxRequestBodySize?: string | number;
@@ -98,7 +102,7 @@ export type FunctionConfig = {
  */
 export const createExpressApp =
   ({
-    _console = console,
+    _logger = getLogger(),
     _process = process,
     apiKeyEnvVarName = 'LAMBDA_API_KEY',
     maxRequestBodySize = '1mb',
@@ -112,6 +116,12 @@ export const createExpressApp =
       // eslint-disable-next-line no-param-reassign
       delete _process.env[apiKeyEnvVarName];
     }
+
+    // Expose the logger to every subsequent middleware.
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      req.logger = _logger;
+      next();
+    });
 
     // This is the options we pass to the `json()` middleware.
     const jsonOptions = {
@@ -223,7 +233,7 @@ export const createExpressApp =
     });
 
     // Error handler.
-    app.use(createErrorHandler({ _console }));
+    app.use(createErrorHandler({ _logger }));
 
     return app;
   };
@@ -232,4 +242,5 @@ export * from './api';
 export * from './auth';
 export * from './download';
 export * from './error';
+export * from './logger';
 export * from './request-context';

@@ -3,7 +3,7 @@ import { Readable } from 'stream';
 import { oneLine } from 'common-tags';
 
 import { FLAGGED_FILE_MAGIC_NUMBERS_LENGTH, MAX_FILE_SIZE_MB } from './const';
-import { Stderr } from '../stdio';
+import { IOLogger } from './logger';
 
 type ScanFileFunction = (_path: string, isDirectory: boolean) => boolean;
 
@@ -11,7 +11,7 @@ type Files = Record<string, unknown>;
 
 export type IOBaseConstructorParams = {
   filePath: string;
-  stderr: Stderr;
+  logger: IOLogger;
 };
 
 /*
@@ -20,7 +20,7 @@ export type IOBaseConstructorParams = {
 export class IOBase {
   path: string;
 
-  stderr: Stderr;
+  logger: IOLogger;
 
   files: Files;
 
@@ -30,9 +30,9 @@ export class IOBase {
 
   shouldScanFile: ScanFileFunction;
 
-  constructor({ filePath, stderr }: IOBaseConstructorParams) {
+  constructor({ filePath, logger }: IOBaseConstructorParams) {
     this.path = filePath;
-    this.stderr = stderr;
+    this.logger = logger;
     this.files = {};
     this.entries = [];
     // If this is too large the node process will hit a RangeError

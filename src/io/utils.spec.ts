@@ -1,5 +1,5 @@
 import { WalkPromiseOptions, checkFileExists, walkPromise } from './utils';
-import { createFakeFsStats, createFakeStderr } from '../test-helpers';
+import { createFakeFsStats, createFakeLogger } from '../test-helpers';
 
 describe(__filename, () => {
   describe('walkPromise()', () => {
@@ -9,7 +9,7 @@ describe(__filename, () => {
     }: { path?: string } & Partial<WalkPromiseOptions> = {}) => {
       return walkPromise(path, {
         shouldIncludePath,
-        stderr: createFakeStderr(),
+        logger: createFakeLogger(),
       });
     };
 
