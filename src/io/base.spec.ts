@@ -1,13 +1,13 @@
 import { IOBase } from './base';
 import { FLAGGED_FILE_MAGIC_NUMBERS_LENGTH } from './const';
-import { createFakeStderr } from '../test-helpers';
+import { createFakeLogger } from '../test-helpers';
 
 describe(__filename, () => {
   const createIOBase = ({
     filePath = 'foo/bar/',
-    stderr = createFakeStderr(),
+    logger = createFakeLogger(),
   } = {}) => {
-    return new IOBase({ filePath, stderr });
+    return new IOBase({ filePath, logger });
   };
 
   describe('IOBase()', () => {

@@ -46,12 +46,12 @@ export class Crx extends Xpi {
 
   constructor({
     filePath,
-    stderr,
+    logger,
     fs = defaultFs,
     parseCRX = defaultParseCRX,
     zipLib = yauzl,
   }: CrxConstructorParams) {
-    super({ filePath, stderr, zipLib, autoClose: true });
+    super({ filePath, logger, zipLib, autoClose: true });
 
     this.fs = fs;
     this.parseCRX = parseCRX;
@@ -69,7 +69,7 @@ export class Crx extends Xpi {
         let zipBuffer: Buffer;
         try {
           zipBuffer = this.parseCRX(buf);
-          this.stderr.debug('obtained zip data from CRX file');
+          this.logger.debug('obtained zip data from CRX file');
         } catch (err2) {
           reject(err2);
           return;
