@@ -10,6 +10,23 @@ Various addons related helpers to build scanners.
 npm install addons-scanner-utils
 ```
 
+### Logging
+
+Scanners on Cloud Run should log through `createLogger()`. It writes one JSON object per line, which Cloud Run turns into a structured log entry: `severity` becomes the entry's severity, `message` its text, and any extra fields become `jsonPayload.<name>`. Inside a request, every line also carries the `request_id` (the `X-AMO-Request-ID` header, or a generated UUID) and, when the `GOOGLE_CLOUD_PROJECT` environment variable is set on the service, the request's trace, so the Logs Explorer shows the scanner's lines under Cloud Run's own entry for the request.
+
+```js
+import { createExpressApp, createLogger } from 'addons-scanner-utils';
+
+const log = createLogger();
+
+const app = createExpressApp()((req, res) => {
+  log.info('scan complete', { matched_rules: 2, elapsed_ms: 340 });
+  res.json({ ok: true });
+});
+```
+
+`ERROR` and `WARNING` go to stderr, `INFO` and `DEBUG` to stdout. Do not log objects with `console.error()` directly: Node prints them over several lines once they are longer than 80 characters, and Cloud Run stores each line as a separate entry with no severity. The error handler installed by `createExpressApp()` logs through the same logger: a 5xx as `ERROR`, a 4xx as `WARNING`.
+
 ## Requirements
 
 - You need [Node](https://nodejs.org/) 22, which is the current [LTS](https://github.com/nodejs/LTS) (long term support) release.

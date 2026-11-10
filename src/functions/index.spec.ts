@@ -165,22 +165,145 @@ describe(__filename, () => {
       });
     });
 
+    const loggedLine = (fn: jest.Mock): Record<string, unknown> => {
+      expect(fn).toHaveBeenCalledTimes(1);
+      const [line] = fn.mock.calls[0];
+      expect(typeof line).toEqual('string');
+      expect(line).not.toContain('\n');
+      return JSON.parse(line);
+    };
+
     it('returns a 500 when handler throws an error and logs the error', async () => {
       const _console = {
         ...console,
         error: jest.fn(),
       };
       const error = 'runtime error';
+      const requestId = 'req-500';
       const { app, sendApiKey } = _createExpressApp({ _console })(() => {
         throw new Error(error);
       });
 
-      const response = await sendApiKey(request(app).post('/'));
+      const response = await sendApiKey(
+        request(app).post('/').set(AMO_REQUEST_ID_HEADER, requestId),
+      );
 
       expect(response.status).toEqual(500);
       expect(response.body).toMatchObject({ error });
 
-      expect(_console.error).toHaveBeenCalled();
+      expect(loggedLine(_console.error)).toEqual({
+        severity: 'ERROR',
+        message: error,
+        status: 500,
+        extra_info: null,
+        request_id: requestId,
+      });
+    });
+
+    it('logs a client error as a warning on one line', async () => {
+      const _console = {
+        ...console,
+        error: jest.fn(),
+      };
+      const requestId = 'dcb73090-563c-42d3-9e47-25018be96ce1';
+      const { app } = _createExpressApp({ _console })(okHandler);
+
+      const response = await request(app)
+        .post('/')
+        .set(AMO_REQUEST_ID_HEADER, requestId)
+        .send('not json');
+
+      expect(response.status).toEqual(415);
+
+      expect(loggedLine(_console.error)).toEqual({
+        severity: 'WARNING',
+        message: 'unsupported content type',
+        status: 415,
+        extra_info: null,
+        request_id: requestId,
+      });
+    });
+
+    it('logs the extra info of an error', async () => {
+      const _console = {
+        ...console,
+        error: jest.fn(),
+      };
+      const { app, sendApiKey } = _createExpressApp({ _console })((
+        req,
+        res,
+        next,
+      ) => {
+        next(
+          createAppError({
+            message: 'bad request',
+            extraInfo: 'the details',
+            status: 400,
+          }),
+        );
+      });
+
+      const response = await sendApiKey(request(app).post('/'));
+
+      expect(response.status).toEqual(400);
+      expect(response.body).toEqual({
+        error: 'bad request',
+        extra_info: 'the details',
+      });
+      expect(loggedLine(_console.error)).toMatchObject({
+        severity: 'WARNING',
+        message: 'bad request',
+        status: 400,
+        extra_info: 'the details',
+      });
+    });
+
+    it('logs the trace of the request when the project ID is set', async () => {
+      const _console = {
+        ...console,
+        error: jest.fn(),
+      };
+      const traceId = '105445aa7843bc8bf206b12000100000';
+      const apiKeyEnvVarName = 'API_KEY';
+      const _process = createProcessWithEnv({
+        [apiKeyEnvVarName]: 'api-key',
+        GOOGLE_CLOUD_PROJECT: 'some-project',
+      });
+      const app = createExpressApp({ _console, _process, apiKeyEnvVarName })(
+        okHandler,
+      );
+
+      const response = await request(app)
+        .post('/')
+        .set('X-Cloud-Trace-Context', `${traceId}/1;o=1`)
+        .send('not json');
+
+      expect(response.status).toEqual(415);
+      expect(loggedLine(_console.error)).toMatchObject({
+        'logging.googleapis.com/trace': `projects/some-project/traces/${traceId}`,
+      });
+    });
+
+    it('logs a request ID for a body that fails to parse', async () => {
+      const _console = {
+        ...console,
+        error: jest.fn(),
+      };
+      const requestId = 'req-bad-body';
+      const { app } = _createExpressApp({ _console })(okHandler);
+
+      const response = await request(app)
+        .post('/')
+        .set('Content-Type', 'application/json')
+        .set(AMO_REQUEST_ID_HEADER, requestId)
+        .send('{not json');
+
+      expect(response.status).toEqual(400);
+      expect(loggedLine(_console.error)).toMatchObject({
+        severity: 'WARNING',
+        status: 400,
+        request_id: requestId,
+      });
     });
 
     it('deletes the api key env variable when creating the lambda function', async () => {

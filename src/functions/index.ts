@@ -10,36 +10,40 @@ import express, {
 import safeCompare from 'safe-compare';
 
 import { AppError, createAppError } from './error';
+import { LoggerConfig, createLogger } from './log';
 import { requestIdMiddleware } from './request-context';
 
 /**
  * Express error handling middleware that serializes an {@link AppError} to a
- * JSON response and logs it.
+ * JSON response and logs it as one structured line (see `log.ts`): `ERROR`
+ * for a 5xx, `WARNING` for a 4xx, since most 4xx on a public service are
+ * internet probes rejected by the authentication middleware.
  *
  * @param _console - Console object for logging (for testing purposes)
+ * @param _process - Process object for environment variables (for testing
+ *   purposes)
  */
-export const createErrorHandler =
-  ({
-    _console = console,
-  }: { _console?: typeof console } = {}): ErrorRequestHandler =>
+export const createErrorHandler = ({
+  _console = console,
+  _process = process,
+}: Pick<LoggerConfig, '_console' | '_process'> = {}): ErrorRequestHandler => {
+  const log = createLogger({ _console, _process });
+
   // Even though we are not using `next`, it must be kept because the Express
   // error handler signature requires 4 arguments.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  (err: AppError, req: Request, res: Response, next: NextFunction) => {
-    const error = {
-      error: err.message,
-      extra_info: err.extraInfo || null,
-    };
+  return (err: AppError, req: Request, res: Response, next: NextFunction) => {
+    const status = err.status || 500;
+    const extraInfo = err.extraInfo || null;
 
-    res.status(err.status || 500).json(error);
+    res.status(status).json({ error: err.message, extra_info: extraInfo });
 
-    // Also send the error to the cloud provider, including the request ID for
-    // traceability when available.
-    _console.error({
-      ...error,
-      request_id: (req as RequestWithExtraProps).amoRequestId || null,
+    log[status >= 500 ? 'error' : 'warning'](err.message, {
+      status,
+      extra_info: extraInfo,
     });
   };
+};
 
 /**
  * Extended Express request type with additional properties added by the
@@ -128,11 +132,13 @@ export const createExpressApp =
       },
     };
 
+    // Capture the request ID and make it available for the rest of the chain,
+    // the error handler included, so that even a body that fails to parse is
+    // logged with its request ID.
+    app.use(requestIdMiddleware);
+
     // Parse JSON body requests.
     app.use(express.json(jsonOptions));
-
-    // Capture the request ID and make it available for the rest of the chain.
-    app.use(requestIdMiddleware);
 
     // Authentication middleware plus some extra checks.
     app.use(
@@ -223,7 +229,7 @@ export const createExpressApp =
     });
 
     // Error handler.
-    app.use(createErrorHandler({ _console }));
+    app.use(createErrorHandler({ _console, _process }));
 
     return app;
   };
@@ -232,4 +238,5 @@ export * from './api';
 export * from './auth';
 export * from './download';
 export * from './error';
+export * from './log';
 export * from './request-context';
