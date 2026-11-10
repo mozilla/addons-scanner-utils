@@ -48,10 +48,10 @@ export class Xpi extends IOBase {
   constructor({
     autoClose = true,
     filePath,
-    stderr,
+    logger,
     zipLib = yauzl,
   }: XpiConstructorParams) {
-    super({ filePath, stderr });
+    super({ filePath, logger });
 
     this.autoClose = autoClose;
     this.files = {};
@@ -115,11 +115,11 @@ export class Xpi extends IOBase {
       return;
     }
     if (!this.shouldScanFile(entry.fileName, false)) {
-      this.stderr.debug(`skipping file: ${entry.fileName}`);
+      this.logger.debug(`skipping file: ${entry.fileName}`);
       return;
     }
     if (this.entries.includes(entry.fileName)) {
-      this.stderr.info(oneLine`found duplicate file entry: "${entry.fileName}"
+      this.logger.info(oneLine`found duplicate file entry: "${entry.fileName}"
         in package`);
 
       reject(
@@ -141,7 +141,7 @@ export class Xpi extends IOBase {
         if (this.shouldScanFile(fileName, false)) {
           wantedFiles[fileName] = this.files[fileName];
         } else {
-          this.stderr.debug(`skipping cached file: ${fileName}`);
+          this.logger.debug(`skipping cached file: ${fileName}`);
         }
       });
       return wantedFiles;
@@ -155,7 +155,13 @@ export class Xpi extends IOBase {
       });
 
       zipfile.on('entry', (entry: Entry) => {
-        this.handleEntry(entry, reject);
+        // An exception thrown in an event handler would not reject the
+        // promise, and it would never settle.
+        try {
+          this.handleEntry(entry, reject);
+        } catch (err) {
+          reject(err instanceof Error ? err : new Error(String(err)));
+        }
       });
 
       // When the last entry has been processed, resolve the promise.

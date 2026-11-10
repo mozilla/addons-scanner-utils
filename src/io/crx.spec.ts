@@ -5,7 +5,7 @@ import yauzl, { Entry, ZipFile } from 'yauzl';
 import { defaultParseCRX, Crx } from './crx';
 import { Files } from './xpi';
 import { DEFLATE_COMPRESSION, NO_COMPRESSION } from './const';
-import { createFakeStderr, createFakeZipFile } from '../test-helpers';
+import { createFakeLogger, createFakeZipFile } from '../test-helpers';
 
 describe(__filename, () => {
   const defaultData = {
@@ -78,12 +78,12 @@ describe(__filename, () => {
 
   const createCrx = ({
     filePath = 'foo/bar',
-    stderr = createFakeStderr(),
+    logger = createFakeLogger(),
     zipLib = fakeZipLib,
     fs = defaultFs,
     parseCRX = defaultParseCRX,
   } = {}) => {
-    return new CrxTest({ filePath, stderr, zipLib, fs, parseCRX });
+    return new CrxTest({ filePath, logger, zipLib, fs, parseCRX });
   };
 
   describe('open()', () => {
@@ -120,7 +120,7 @@ describe(__filename, () => {
     it('should open a CRX and return a zip', async () => {
       const myCrx = new Crx({
         filePath: 'src/tests/fixtures/io/extension.crx',
-        stderr: createFakeStderr(),
+        logger: createFakeLogger(),
       });
 
       const zipfile = await myCrx.open();
@@ -132,7 +132,7 @@ describe(__filename, () => {
     it('should open a CRX3 and return a zip', async () => {
       const myCrx = new Crx({
         filePath: 'src/tests/fixtures/io/crx3.crx',
-        stderr: createFakeStderr(),
+        logger: createFakeLogger(),
       });
 
       const zipfile = await myCrx.open();
@@ -144,7 +144,7 @@ describe(__filename, () => {
     it('should not accept a regular zip file as a CRX file', async () => {
       const notCrx = new Crx({
         filePath: 'src/tests/fixtures/io/simple-archive.zip',
-        stderr: createFakeStderr(),
+        logger: createFakeLogger(),
       });
 
       await expect(notCrx.open()).rejects.toThrow(

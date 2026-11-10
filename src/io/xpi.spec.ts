@@ -8,7 +8,7 @@ import { DuplicateZipEntryError, InvalidZipFileError } from '../errors';
 import { Xpi, Files } from './xpi';
 import { DEFLATE_COMPRESSION, NO_COMPRESSION } from './const';
 import {
-  createFakeStderr,
+  createFakeLogger,
   createFakeZipFile,
   readStringFromStream,
 } from '../test-helpers';
@@ -95,10 +95,10 @@ describe(__filename, () => {
   const createXpi = ({
     autoClose = true,
     filePath = 'foo/bar',
-    stderr = createFakeStderr(),
+    logger = createFakeLogger(),
     zipLib = fakeZipLib,
   } = {}) => {
-    return new XpiTest({ filePath, autoClose, stderr, zipLib });
+    return new XpiTest({ filePath, autoClose, logger, zipLib });
   };
 
   describe('open()', () => {
@@ -407,18 +407,34 @@ describe(__filename, () => {
 
     it('throws an exception when a duplicate entry has been found', async () => {
       const xpi = new Xpi({
-        stderr: createFakeStderr(),
+        logger: createFakeLogger(),
         filePath: 'src/tests/fixtures/io/archive-with-duplicate-files.zip',
       });
 
       await expect(xpi.getFiles()).rejects.toThrow(DuplicateZipEntryError);
     });
 
+    it('rejects when handling an entry throws', async () => {
+      const error = new Error('logger error');
+      const logger = {
+        ...createFakeLogger(),
+        info: jest.fn().mockImplementation(() => {
+          throw error;
+        }),
+      };
+      const xpi = new Xpi({
+        logger,
+        filePath: 'src/tests/fixtures/io/archive-with-duplicate-files.zip',
+      });
+
+      await expect(xpi.getFiles()).rejects.toThrow(error);
+    });
+
     it('throws an exception when a duplicate entry has been found, even when autoClose is disabled', async () => {
       const xpi = new Xpi({
         autoClose: false,
         filePath: 'src/tests/fixtures/io/archive-with-duplicate-files.zip',
-        stderr: createFakeStderr(),
+        logger: createFakeLogger(),
       });
 
       await expect(xpi.getFiles()).rejects.toThrow(DuplicateZipEntryError);
@@ -431,7 +447,7 @@ describe(__filename, () => {
         autoClose: false,
         filePath:
           'src/tests/fixtures/io/archive-with-invalid-chars-in-filenames.zip',
-        stderr: createFakeStderr(),
+        logger: createFakeLogger(),
       });
 
       await expect(xpi.getFiles()).rejects.toThrow(InvalidZipFileError);
@@ -974,7 +990,7 @@ describe(__filename, () => {
       const xpi = new Xpi({
         autoClose: false,
         filePath: 'src/tests/fixtures/io/simple-archive.zip',
-        stderr: createFakeStderr(),
+        logger: createFakeLogger(),
       });
 
       expect(xpi.zipfile).not.toBeDefined();
@@ -995,7 +1011,7 @@ describe(__filename, () => {
       const xpi = new Xpi({
         autoClose: true,
         filePath: '',
-        stderr: createFakeStderr(),
+        logger: createFakeLogger(),
       });
 
       xpi.zipfile = createFakeZipFile();

@@ -9,10 +9,24 @@ import {
   RequestWithExtraProps,
   createAppError,
   createExpressApp,
+  createLogger,
   getRequestId,
 } from '.';
 
 describe(__filename, () => {
+  // Logger capturing entries in memory.
+  const createTestLogger = () => {
+    const lines: string[] = [];
+    const logger = createLogger({
+      destination: { write: (line: string) => lines.push(line) },
+    });
+
+    return {
+      logger,
+      entries: () => lines.map((line) => JSON.parse(line)),
+    };
+  };
+
   describe('createAppError', () => {
     it('returns an API error with a message', () => {
       const message = 'oops, error';
@@ -61,7 +75,7 @@ describe(__filename, () => {
     };
 
     const _createExpressApp = ({
-      _console,
+      _logger = createTestLogger().logger,
       apiKey = 'valid api key',
       apiKeyEnvVarName = 'API_KEY',
       maxRequestBodySize,
@@ -71,7 +85,7 @@ describe(__filename, () => {
       const _process = createProcessWithEnv({ [apiKeyEnvVarName]: apiKey });
 
       const decorator = createExpressApp({
-        _console,
+        _logger,
         _process,
         apiKeyEnvVarName,
         maxRequestBodySize,
@@ -166,21 +180,93 @@ describe(__filename, () => {
     });
 
     it('returns a 500 when handler throws an error and logs the error', async () => {
-      const _console = {
-        ...console,
-        error: jest.fn(),
-      };
+      const { logger, entries } = createTestLogger();
       const error = 'runtime error';
-      const { app, sendApiKey } = _createExpressApp({ _console })(() => {
+      const { app, sendApiKey } = _createExpressApp({ _logger: logger })(() => {
         throw new Error(error);
       });
 
-      const response = await sendApiKey(request(app).post('/'));
+      const response = await sendApiKey(
+        request(app).post('/').set(AMO_REQUEST_ID_HEADER, 'some-request-id'),
+      );
 
       expect(response.status).toEqual(500);
       expect(response.body).toMatchObject({ error });
 
-      expect(_console.error).toHaveBeenCalled();
+      expect(entries()).toEqual([
+        expect.objectContaining({
+          severity: 'ERROR',
+          message: error,
+          status: 500,
+          extra_info: null,
+          request_id: 'some-request-id',
+          stack_trace: expect.stringContaining(error),
+        }),
+      ]);
+    });
+
+    it('logs client errors as warnings without a stack trace', async () => {
+      const { logger, entries } = createTestLogger();
+      const { app } = _createExpressApp({ _logger: logger })(okHandler);
+
+      await request(app).post('/').set('content-type', 'application/json');
+
+      expect(entries()).toEqual([
+        expect.objectContaining({
+          severity: 'WARNING',
+          message: 'missing authorization header',
+          status: 400,
+        }),
+      ]);
+      expect(entries()[0]).not.toHaveProperty('stack_trace');
+    });
+
+    it('exposes the logger of the app on the request', async () => {
+      const { logger, entries } = createTestLogger();
+      const { app, sendApiKey } = _createExpressApp({ _logger: logger })((
+        req: RequestWithExtraProps,
+        res: express.Response,
+      ) => {
+        expect(req.logger).toBe(logger);
+        req.logger.info('from handler');
+        res.json({ ok: true });
+      });
+
+      const response = await sendApiKey(
+        request(app).post('/').set(AMO_REQUEST_ID_HEADER, 'some-request-id'),
+      );
+
+      expect(response.status).toEqual(200);
+      expect(entries()).toEqual([
+        expect.objectContaining({
+          message: 'from handler',
+          request_id: 'some-request-id',
+        }),
+      ]);
+    });
+
+    it('adds the request ID to logs written by the handler', async () => {
+      const { logger, entries } = createTestLogger();
+      const { app, sendApiKey } = _createExpressApp({ _logger: logger })(async (
+        req,
+        res,
+      ) => {
+        await Promise.resolve();
+        logger.info('from handler');
+        res.json({ ok: true });
+      });
+
+      await sendApiKey(
+        request(app).post('/').set(AMO_REQUEST_ID_HEADER, 'some-request-id'),
+      );
+
+      expect(entries()).toEqual([
+        expect.objectContaining({
+          severity: 'INFO',
+          message: 'from handler',
+          request_id: 'some-request-id',
+        }),
+      ]);
     });
 
     it('deletes the api key env variable when creating the lambda function', async () => {
@@ -192,7 +278,11 @@ describe(__filename, () => {
 
       expect(_process.env).toHaveProperty(apiKeyEnvVarName, apiKey);
 
-      createExpressApp({ _process, apiKeyEnvVarName })(okHandler);
+      createExpressApp({
+        _process,
+        apiKeyEnvVarName,
+        _logger: createTestLogger().logger,
+      })(okHandler);
 
       expect(_process.env).not.toHaveProperty(apiKeyEnvVarName);
     });

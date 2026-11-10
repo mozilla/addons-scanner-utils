@@ -2,18 +2,11 @@ import { Readable } from 'stream';
 
 import { ZipFile, RandomAccessReader } from 'yauzl';
 
-import { Stderr, Stdout } from './stdio';
+import { IOLogger } from './io/logger';
 
-export const createFakeStdout = (): Stdout => {
-  return {
-    write: jest.fn(),
-  };
-};
-
-export const createFakeStderr = (): Stderr => {
+export const createFakeLogger = (): IOLogger => {
   return {
     debug: jest.fn(),
-    error: jest.fn(),
     info: jest.fn(),
   };
 };
