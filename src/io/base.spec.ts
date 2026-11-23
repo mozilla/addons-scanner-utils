@@ -1,16 +1,28 @@
-import { IOBase } from './base';
+import { IOBase, IOBaseConstructorParams } from './base';
 import { FLAGGED_FILE_MAGIC_NUMBERS_LENGTH } from './const';
-import { createFakeStderr } from '../test-helpers';
+import { createFakeLogger } from '../test-helpers';
 
 describe(__filename, () => {
   const createIOBase = ({
     filePath = 'foo/bar/',
-    stderr = createFakeStderr(),
+    logger = createFakeLogger(),
   } = {}) => {
-    return new IOBase({ filePath, stderr });
+    return new IOBase({ filePath, logger });
   };
 
   describe('IOBase()', () => {
+    it('requires a logger', () => {
+      expect(
+        () =>
+          // We simulate a caller without type checking, still passing the
+          // `stderr` option.
+          new IOBase({
+            filePath: 'foo/bar/',
+            stderr: createFakeLogger(),
+          } as unknown as IOBaseConstructorParams),
+      ).toThrow('The "logger" option is required');
+    });
+
     it('should init class props as expected', () => {
       const filePath = 'foo/not-bar';
       const io = createIOBase({ filePath });

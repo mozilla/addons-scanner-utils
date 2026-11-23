@@ -1,8 +1,10 @@
 import { Readable } from 'stream';
 import { EventEmitter } from 'events';
 
+import pino from 'pino';
+
 import { Directory } from './directory';
-import { createFakeStderr, readStringFromStream } from '../test-helpers';
+import { createFakeLogger, readStringFromStream } from '../test-helpers';
 
 describe(__filename, () => {
   const fakeFile = {
@@ -11,10 +13,27 @@ describe(__filename, () => {
 
   const createDirectory = ({
     filePath = 'src/tests/fixtures/io/',
-    stderr = createFakeStderr(),
+    logger = createFakeLogger(),
   } = {}) => {
-    return new Directory({ filePath, stderr });
+    return new Directory({ filePath, logger });
   };
+
+  it('accepts a pino logger', async () => {
+    const lines: string[] = [];
+    const logger = pino(
+      { level: 'debug' },
+      { write: (line: string) => lines.push(line) },
+    );
+    const myDirectory = new Directory({
+      filePath: 'src/tests/fixtures/io/',
+      logger,
+    });
+    myDirectory.setScanFileCallback(() => false);
+
+    await myDirectory.getFiles();
+
+    expect(lines.length).toBeGreaterThan(0);
+  });
 
   describe('Directory.getFiles()', () => {
     it('should return cached data when available', async () => {
