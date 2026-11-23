@@ -79,6 +79,10 @@ export const createLogger = ({
         serviceContext: {
           service:
             _process.env.K_SERVICE || _process.env.npm_package_name || 'local',
+          version:
+            _process.env.SCANNER_VERSION ||
+            _process.env.npm_package_version ||
+            'unknown',
         },
       },
       formatters: {

@@ -75,7 +75,9 @@ describe(__filename, () => {
 
       logger.info('hello');
 
-      expect(entries()[0].serviceContext).toEqual({ service: 'some-scanner' });
+      expect(entries()[0].serviceContext).toEqual(
+        expect.objectContaining({ service: 'some-scanner' }),
+      );
     });
 
     it('defaults the service name to "local"', () => {
@@ -87,7 +89,10 @@ describe(__filename, () => {
 
       logger.info('hello');
 
-      expect(entries()[0].serviceContext).toEqual({ service: 'local' });
+      expect(entries()[0].serviceContext).toEqual({
+        service: 'local',
+        version: 'unknown',
+      });
     });
 
     it('uses K_SERVICE as the service name on Cloud Run', () => {
@@ -102,9 +107,40 @@ describe(__filename, () => {
 
       logger.info('hello');
 
-      expect(entries()[0].serviceContext).toEqual({
-        service: 'some-cloud-run-service',
+      expect(entries()[0].serviceContext).toEqual(
+        expect.objectContaining({ service: 'some-cloud-run-service' }),
+      );
+    });
+
+    it('uses the package version as the service version', () => {
+      const { destination, entries } = createDestination();
+      const logger = createLogger({
+        destination,
+        _process: createProcessWithEnv({ npm_package_version: '1.2.3' }),
       });
+
+      logger.info('hello');
+
+      expect(entries()[0].serviceContext).toEqual(
+        expect.objectContaining({ version: '1.2.3' }),
+      );
+    });
+
+    it('uses SCANNER_VERSION as the service version when set', () => {
+      const { destination, entries } = createDestination();
+      const logger = createLogger({
+        destination,
+        _process: createProcessWithEnv({
+          SCANNER_VERSION: 'abc123',
+          npm_package_version: '1.2.3',
+        }),
+      });
+
+      logger.info('hello');
+
+      expect(entries()[0].serviceContext).toEqual(
+        expect.objectContaining({ version: 'abc123' }),
+      );
     });
 
     it('logs at the info level by default', () => {
