@@ -31,5 +31,26 @@ describe(__filename, () => {
       expect(decoded.exp).toBeDefined();
       expect(decoded.jti).toBeDefined();
     });
+
+    it('expires after 60 seconds by default', () => {
+      const token = makeJWT({
+        env: { AMO_JWT_ISS_KEY: issKey, AMO_JWT_SECRET: secret },
+      });
+
+      const decoded = jwt.verify(token, secret) as jwt.JwtPayload;
+
+      expect(decoded.exp! - decoded.iat!).toEqual(60);
+    });
+
+    it('accepts a custom expiresIn', () => {
+      const token = makeJWT({
+        env: { AMO_JWT_ISS_KEY: issKey, AMO_JWT_SECRET: secret },
+        expiresIn: 300,
+      });
+
+      const decoded = jwt.verify(token, secret) as jwt.JwtPayload;
+
+      expect(decoded.exp! - decoded.iat!).toEqual(300);
+    });
   });
 });
